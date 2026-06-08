@@ -6,6 +6,7 @@ const router = Router();
 
 router.post("/", async (req: Request, res: Response) => {
   const { title, body, comments } = req.body as SummarizeRequest;
+  console.log("[Backend] Request received:", req.body); // add this
 
   if (!title) {
     res.status(400).json({ error: "title is required" });

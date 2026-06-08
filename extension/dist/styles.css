@@ -1,0 +1,37 @@
+.rs-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid #ff4500;
+  color: #ff4500;
+  background: transparent;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.rs-btn:hover {
+  background: #ff4500;
+  color: white;
+}
+
+.rs-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rs-popup {
+  position: absolute;
+  z-index: 9999;
+  background: #1a1a1b;
+  color: #d7dadc;
+  border: 1px solid #343536;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 420px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  margin-top: 6px;
+}
