@@ -21,7 +21,6 @@
   cursor: not-allowed;
 }
 
-/* Overlay */
 .rs-modal-overlay {
   position: fixed;
   inset: 0;
@@ -38,7 +37,6 @@
   opacity: 1;
 }
 
-/* Modal */
 .rs-modal {
   background: #1a1a1b;
   border: 1px solid #343536;
@@ -58,7 +56,6 @@
   transform: translateY(0);
 }
 
-/* Header */
 .rs-modal-header {
   display: flex;
   align-items: center;
@@ -91,7 +88,6 @@
   background: #272729;
 }
 
-/* Body */
 .rs-modal-body {
   padding: 20px;
   font-size: 14px;
