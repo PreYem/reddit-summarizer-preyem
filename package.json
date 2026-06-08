@@ -1,0 +1,8 @@
+{
+  "name": "reddit-summarizer",
+  "private": true,
+  "workspaces": [
+    "extension",
+    "backend"
+  ]
+}
