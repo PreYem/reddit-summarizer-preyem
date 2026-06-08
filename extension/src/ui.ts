@@ -1,10 +1,24 @@
-export function createButton(): HTMLButtonElement {
-  const btn = document.createElement("button");
-  btn.className = "rs-btn";
-  btn.textContent = "✦ Summe--arize";
+export interface Summary {
+  post: string;
+  community: string;
+}
 
-  // Stop clicks on the button from reaching Reddit's link handlers
-  btn.addEventListener("mousedown", (e) => {
+let cachedSummary: Summary | null = null;
+
+export function getCachedSummary(): Summary | null {
+  return cachedSummary;
+}
+
+export function setCachedSummary(summary: Summary): void {
+  cachedSummary = summary;
+}
+
+export function createButton(): HTMLButtonElement {
+  const btn = document.createElement('button');
+  btn.className = 'rs-btn';
+  btn.textContent = '✦ Summarize';
+
+  btn.addEventListener('mousedown', (e) => {
     e.stopPropagation();
     e.preventDefault();
   });
@@ -12,28 +26,99 @@ export function createButton(): HTMLButtonElement {
   return btn;
 }
 
-export function showPopup(anchor: HTMLElement, content: string) {
-  // Remove any existing popup
-  document.querySelector(".rs-popup")?.remove();
-
-  const popup = document.createElement("div");
-  popup.className = "rs-popup";
-  popup.textContent = content;
-
-  // Close on outside click
-  setTimeout(() => {
-    document.addEventListener("click", () => popup.remove(), { once: true });
-  }, 0);
-
-  anchor.parentElement?.appendChild(popup);
-}
-
-export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "error") {
+export function setButtonState(
+  btn: HTMLButtonElement,
+  state: 'idle' | 'loading' | 'error'
+) {
   const labels = {
-    idle: "✦ Summarize",
-    loading: "⏳ Summarizing...",
-    error: "✗ Failed",
+    idle: '✦ Summarize',
+    loading: '⏳ Summarizing...',
+    error: '✗ Failed',
   };
   btn.textContent = labels[state];
-  btn.disabled = state === "loading";
+  btn.disabled = state === 'loading';
+}
+
+export function showModal(summary: Summary) {
+  document.querySelector('.rs-modal-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'rs-modal-overlay';
+
+  const modal = document.createElement('div');
+  modal.className = 'rs-modal';
+
+  const header = document.createElement('div');
+  header.className = 'rs-modal-header';
+
+  const title = document.createElement('span');
+  title.className = 'rs-modal-title';
+  title.textContent = '✦ Summary';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'rs-modal-close';
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', closeModal);
+
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+
+  const body = document.createElement('div');
+  body.className = 'rs-modal-body';
+
+  const postSection = document.createElement('div');
+  postSection.className = 'rs-section';
+
+  const postLabel = document.createElement('div');
+  postLabel.className = 'rs-section-label';
+  postLabel.textContent = 'Post';
+
+  const postText = document.createElement('p');
+  postText.className = 'rs-section-text';
+  postText.textContent = summary.post;
+
+  postSection.appendChild(postLabel);
+  postSection.appendChild(postText);
+
+  const communitySection = document.createElement('div');
+  communitySection.className = 'rs-section';
+
+  const communityLabel = document.createElement('div');
+  communityLabel.className = 'rs-section-label';
+  communityLabel.textContent = 'Community';
+
+  const communityText = document.createElement('p');
+  communityText.className = 'rs-section-text';
+  communityText.textContent = summary.community;
+
+  communitySection.appendChild(communityLabel);
+  communitySection.appendChild(communityText);
+
+  body.appendChild(postSection);
+  body.appendChild(communitySection);
+  modal.appendChild(header);
+  modal.appendChild(body);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      document.removeEventListener('keydown', onKeyDown);
+    }
+  };
+  document.addEventListener('keydown', onKeyDown);
+
+  requestAnimationFrame(() => overlay.classList.add('rs-modal-visible'));
+}
+
+function closeModal() {
+  const overlay = document.querySelector('.rs-modal-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('rs-modal-visible');
+  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
 }

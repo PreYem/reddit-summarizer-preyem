@@ -5,5 +5,6 @@ export interface SummarizeRequest {
 }
 
 export interface SummarizeResponse {
-  summary: string;
+  post: string;
+  community: string;
 }
