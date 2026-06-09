@@ -8,7 +8,9 @@
   background: transparent;
   cursor: pointer;
   margin-right: 8px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .rs-btn:hover {
@@ -49,7 +51,7 @@
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
   transform: translateY(12px);
   transition: transform 0.2s ease;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .rs-modal-overlay.rs-modal-visible .rs-modal {
@@ -79,7 +81,9 @@
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   line-height: 1;
 }
 
@@ -94,6 +98,8 @@
   line-height: 1.7;
   color: #d7dadc;
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .rs-section {
@@ -118,4 +124,60 @@
   line-height: 1.7;
   color: #d7dadc;
   margin: 0;
+}
+
+.rs-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  // padding: 10px 20px; /* was 12px, tighter top/bottom */
+  padding-top : 15px;
+  border-top: 1px solid #343536;
+  flex-shrink: 0;
+}
+
+.rs-modal-footer > span {
+  font-size: 12px; /* was 11px */
+  color: rgba(255, 255, 255, 0.25);
+  /* margin-left: -20px; */
+}
+
+.rs-modal-footer-links {
+  display: flex;
+  gap: 14px; /* was 12px, slightly more breathing room */
+}
+
+.rs-modal-footer-links a {
+  color: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.rs-modal-footer-links a:hover {
+  color: #ff4500;
+}
+
+.rs-modal-footer-links svg {
+  width: 18px; /* was 14px */
+  height: 18px;
+}
+
+.rs-modal-footer-links a:hover {
+  color: #ff4500;  /* remove or keep as fallback */
+}
+
+/* Portfolio — blue */
+.rs-modal-footer-links a[title="Portfolio"]:hover {
+  color: #4a9eff;
+}
+
+/* GitHub — light gray */
+.rs-modal-footer-links a[title="GitHub"]:hover {
+  color: #e6edf3;
+}
+
+/* GitLab — keep the orange */
+.rs-modal-footer-links a[title="GitLab"]:hover {
+  color: #ff4500;
 }
