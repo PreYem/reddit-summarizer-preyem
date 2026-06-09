@@ -13,6 +13,6 @@ export default defineConfig({
         assetFileNames: '[name].[ext]',
       },
     },
-    copyPublicDir: true,
+    copyPublicDir: false,
   },
 });

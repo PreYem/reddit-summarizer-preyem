@@ -1,0 +1,121 @@
+.rs-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid #ff4500;
+  color: #ff4500;
+  background: transparent;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.rs-btn:hover {
+  background: #ff4500;
+  color: white;
+}
+
+.rs-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rs-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.rs-modal-overlay.rs-modal-visible {
+  opacity: 1;
+}
+
+.rs-modal {
+  background: #1a1a1b;
+  border: 1px solid #343536;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 720px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  transform: translateY(12px);
+  transition: transform 0.2s ease;
+  overflow: hidden;
+}
+
+.rs-modal-overlay.rs-modal-visible .rs-modal {
+  transform: translateY(0);
+}
+
+.rs-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #343536;
+}
+
+.rs-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff4500;
+  letter-spacing: 0.02em;
+}
+
+.rs-modal-close {
+  background: none;
+  border: none;
+  color: #818384;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.rs-modal-close:hover {
+  color: #d7dadc;
+  background: #272729;
+}
+
+.rs-modal-body {
+  padding: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #d7dadc;
+  overflow-y: auto;
+}
+
+.rs-section {
+  margin-bottom: 20px;
+}
+
+.rs-section:last-child {
+  margin-bottom: 0;
+}
+
+.rs-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ff4500;
+  margin-bottom: 8px;
+}
+
+.rs-section-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #d7dadc;
+  margin: 0;
+}

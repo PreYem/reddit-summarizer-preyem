@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Reddit Summarizer",
-  "version": "1.2.0",
+  "version": "1.0.0",
   "description": "Summarize Reddit posts with AI",
   "permissions": ["activeTab"],
   "host_permissions": [
@@ -9,7 +9,7 @@
     "http://localhost:5173/*"
   ],
   "background": {
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {

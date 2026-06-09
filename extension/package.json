@@ -5,11 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch",
-    "build": "vite build"
+    "build": "npm run build:chrome && npm run build:firefox",
+    "build:chrome": "vite build --outDir dist/chrome && node -e \"require('fs').copyFileSync('public/background.js','dist/chrome/background.js');require('fs').copyFileSync('public/styles.css','dist/chrome/styles.css');require('fs').copyFileSync('public/manifest.chrome.json','dist/chrome/manifest.json')\"",
+    "build:firefox": "vite build --outDir dist/firefox && node -e \"require('fs').copyFileSync('public/background.js','dist/firefox/background.js');require('fs').copyFileSync('public/styles.css','dist/firefox/styles.css');require('fs').copyFileSync('public/manifest.firefox.json','dist/firefox/manifest.json')\"",
+    "dev": "vite build --watch"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.0.0-beta.23",
     "@types/chrome": "^0.0.268",
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
