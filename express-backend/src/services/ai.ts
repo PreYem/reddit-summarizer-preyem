@@ -38,5 +38,7 @@ const clean = block.text
   .trim();
 
 const parsed: SummarizeResponse = JSON.parse(clean);
+
+console.log(parsed)
 return parsed;;
 }

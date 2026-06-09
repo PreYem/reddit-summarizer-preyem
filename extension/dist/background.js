@@ -7,7 +7,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     body: JSON.stringify(message.data),
   })
     .then((res) => res.json())
-    .then((json) => sendResponse({ ok: true, summary: json.summary }))
+    .then((json) => sendResponse({ ok: true, summary: json }))
     .catch((err) => sendResponse({ ok: false, error: err.message }));
 
   return true;
