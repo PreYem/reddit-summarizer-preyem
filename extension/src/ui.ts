@@ -16,7 +16,7 @@ export function setCachedSummary(summary: Summary): void {
 export function createButton(): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = "rs-btn";
-  btn.textContent = "✦ Summarize";
+  btn.textContent = "AI Summarize";
 
   btn.addEventListener("mousedown", (e) => {
     e.stopPropagation();
@@ -28,9 +28,10 @@ export function createButton(): HTMLButtonElement {
 
 export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "error") {
   const labels = {
-    idle: "✦ Summarize",
+    // idle: "✦ Summarize",
+    idle: "AI Summarize",
     loading: "⏳ Summarizing...",
-    error: "✗ Failed",
+    error: "Failed to summarize",
   };
   btn.textContent = labels[state];
   btn.disabled = state === "loading";
@@ -50,7 +51,7 @@ export function showModal(summary: Summary) {
 
   const title = document.createElement("span");
   title.className = "rs-modal-title";
-  title.textContent = "✦ Summary";
+  title.textContent = "Reddit Summarize PreYem";
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "rs-modal-close";
