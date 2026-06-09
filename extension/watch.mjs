@@ -2,16 +2,13 @@ import { build } from "vite";
 import { copyFileSync, watch } from "fs";
 
 function copyPublicFiles() {
-  const files = ["background.js", "styles.css"];
-
+  const files = ["background.js", "styles.css", "popup.html", "popup.css"];
   for (const file of files) {
     copyFileSync(`public/${file}`, `dist/chrome/${file}`);
     copyFileSync(`public/${file}`, `dist/firefox/${file}`);
   }
-
   copyFileSync("public/manifest.chrome.json", "dist/chrome/manifest.json");
   copyFileSync("public/manifest.firefox.json", "dist/firefox/manifest.json");
-
   console.log("[watch] public files copied");
 }
 

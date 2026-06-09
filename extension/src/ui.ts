@@ -16,7 +16,7 @@ export function setCachedSummary(summary: Summary): void {
 export function createButton(): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = "rs-btn";
-  btn.textContent = "AI Summarize";
+  btn.textContent = "AI Summary";
 
   btn.addEventListener("mousedown", (e) => {
     e.stopPropagation();
@@ -29,7 +29,7 @@ export function createButton(): HTMLButtonElement {
 export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "error") {
   const labels = {
     // idle: "✦ Summarize",
-    idle: "AI Summarize",
+    idle: "AI Summary",
     loading: "⏳ Summarizing...",
     error: "Failed to summarize",
   };
