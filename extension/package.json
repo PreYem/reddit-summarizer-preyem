@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "npm run build:chrome && npm run build:firefox",
-    "build:chrome": "vite build --outDir dist/chrome && node -e \"require('fs').copyFileSync('public/background.js','dist/chrome/background.js');require('fs').copyFileSync('public/styles.css','dist/chrome/styles.css');require('fs').copyFileSync('public/manifest.chrome.json','dist/chrome/manifest.json')\"",
-    "build:firefox": "vite build --outDir dist/firefox && node -e \"require('fs').copyFileSync('public/background.js','dist/firefox/background.js');require('fs').copyFileSync('public/styles.css','dist/firefox/styles.css');require('fs').copyFileSync('public/manifest.firefox.json','dist/firefox/manifest.json')\"",
+    "build:chrome": "vite build --outDir dist/chrome && node -e \"require('fs').copyFileSync('public/background.js','dist/chrome/background.js');require('fs').copyFileSync('public/styles.css','dist/chrome/styles.css');require('fs').copyFileSync('public/popup.html','dist/chrome/popup.html');require('fs').copyFileSync('public/popup.css','dist/chrome/popup.css');require('fs').copyFileSync('public/manifest.chrome.json','dist/chrome/manifest.json')\"",
+    "build:firefox": "vite build --outDir dist/firefox && node -e \"require('fs').copyFileSync('public/background.js','dist/firefox/background.js');require('fs').copyFileSync('public/styles.css','dist/firefox/styles.css');require('fs').copyFileSync('public/popup.html','dist/firefox/popup.html');require('fs').copyFileSync('public/popup.css','dist/firefox/popup.css');require('fs').copyFileSync('public/manifest.firefox.json','dist/firefox/manifest.json')\"",
     "dev": "node watch.mjs"
   },
   "devDependencies": {

@@ -8,6 +8,10 @@
     "https://www.reddit.com/*",
     "http://localhost:5173/*"
   ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Reddit Summarizer by PreYem"
+  },
   "background": {
     "service_worker": "background.js"
   },
