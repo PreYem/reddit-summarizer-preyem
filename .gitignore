@@ -1,3 +1,5 @@
 /node_modules
 /express-backend/.env
 /extension/dist
+/extention/.env
+/express-backend/dist
