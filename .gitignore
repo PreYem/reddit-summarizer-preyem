@@ -4,3 +4,4 @@
 /extention/.env
 /express-backend/dist
 extension/.env
+express-backend/node_modules
