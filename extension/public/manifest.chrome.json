@@ -5,19 +5,14 @@
   "description": "Summarize Reddit posts with AI",
   "permissions": ["activeTab"],
   "host_permissions": ["https://www.reddit.com/*", "http://localhost:5173/*"],
-
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "512": "icons/icon512.png"
   },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Reddit Summarizer by PreYem",
     "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "512": "icons/icon512.png"
     }
   },
   "background": {
