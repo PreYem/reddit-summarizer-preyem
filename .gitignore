@@ -5,3 +5,5 @@
 /express-backend/dist
 extension/.env
 express-backend/node_modules
+extension-react/dist
+extension-react/node_modules

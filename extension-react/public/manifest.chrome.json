@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Reddit Summarizer",
+  "version": "1.0.0",
+  "description": "Summarize Reddit posts with AI",
+  "permissions": ["activeTab"],
+  "host_permissions": ["https://www.reddit.com/*", "http://localhost:5173/*"],
+  "icons": { "512": "icons/icon512.png" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Reddit Summarizer by PreYem",
+    "default_icon": { "512": "icons/icon512.png" }
+  },
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{
+    "matches": ["https://www.reddit.com/*"],
+    "js": ["content.js"],
+    "css": ["styles.css"],
+    "run_at": "document_idle"
+  }]
+}
