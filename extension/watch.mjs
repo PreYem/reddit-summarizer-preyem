@@ -12,7 +12,7 @@ function copyPublicFiles() {
 
   mkdirSync("dist/chrome/icons", { recursive: true });
   mkdirSync("dist/firefox/icons", { recursive: true });
-  for (const size of ["16", "48", "128"]) {
+  for (const size of ["512"]) {
     copyFileSync(`public/icons/icon${size}.png`, `dist/chrome/icons/icon${size}.png`);
     copyFileSync(`public/icons/icon${size}.png`, `dist/firefox/icons/icon${size}.png`);
   }

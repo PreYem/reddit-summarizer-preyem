@@ -8,9 +8,11 @@
   background: transparent;
   cursor: pointer;
   margin-right: 8px;
-  transition:
-    background 0.15s,
-    color 0.15s;
+  transition: background 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .rs-btn:hover {
@@ -23,7 +25,7 @@
   cursor: not-allowed;
 }
 
-.rs-modal-overlay {
+.rs-modal-backgroundOverlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
@@ -35,7 +37,7 @@
   transition: opacity 0.2s ease;
 }
 
-.rs-modal-overlay.rs-modal-visible {
+.rs-modal-backgroundOverlay.rs-modal-visible {
   opacity: 1;
 }
 
@@ -54,7 +56,7 @@
   overflow: visible;
 }
 
-.rs-modal-overlay.rs-modal-visible .rs-modal {
+.rs-modal-backgroundOverlay.rs-modal-visible .rs-modal {
   transform: translateY(0);
 }
 

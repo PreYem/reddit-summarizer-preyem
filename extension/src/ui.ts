@@ -1,69 +1,137 @@
+/**
+ * ui.ts
+ *
+ * Everything that touches the DOM for our extension's UI:
+ *   - The in-memory cache (keyed by URL)
+ *   - The "AI Summary" button element
+ *   - The modal overlay that shows the summary
+ *
+ * NOTE: We're building DOM elements manually with document.createElement()
+ * instead of using React/Vue/etc. This is intentional — content scripts are
+ * guests inside Reddit's page, so we can't use a framework that needs to
+ * "own" the DOM from a root element. Vanilla DOM is the right tool here.
+ */
+
+// ---------------------------------------------------------------------------
+// TYPES
+// ---------------------------------------------------------------------------
+
+// Defines the shape of a summary response from the backend.
+// This is shared with the backend via the /shared/types file.
+
+// The AI Response type coming from the backend and synced with the frontend - PreYem
 export interface Summary {
-  post: string;
-  community: string;
+  post: string; // Summary of the post itself
+  community: string; // Summary of the comment section / community reaction
+  community_reaction: "positive" | "overwhelmingly positive" | "negative" | "overwhelmingly negative" | "mixed" | "inconclusive";
 }
 
+// Caching the summary in memory per post, meaning clicking the AI Summary button and closing the modal and opening it again will bring the same response
+// without sending an API request a second time to avoid Token usage ramping up - PreYem
 const summaryCache = new Map<string, Summary>();
 
+// Returns the cached summary for the current page URL, or null if there isn't one.
 export function getCachedSummary(): Summary | null {
   return summaryCache.get(window.location.href) ?? null;
 }
 
+// Saves a summary for the current page URL.
 export function setCachedSummary(summary: Summary): void {
   summaryCache.set(window.location.href, summary);
 }
 
+// Button - PreYem
+// Creating the "AI Summary" button within the post - PreYem
 export function createButton(): HTMLButtonElement {
   const btn = document.createElement("button");
+
   btn.className = "rs-btn";
   btn.textContent = "AI Summary";
 
-  btn.addEventListener("mousedown", (e) => {
-    e.stopPropagation();
-    e.preventDefault();
+  btn.addEventListener("mousedown", (event) => {
+    event.stopPropagation(); // Don't let the event bubble up to Reddit's handlers
+    event.preventDefault(); // Don't trigger default browser behavior (e.g. focus stealing)
   });
 
   return btn;
 }
 
+// Updates the button's text and disabled state based on what's happening.
+// Used as a simple state machine: idle → loading → idle (or error → idle)
 export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "error") {
   const labels = {
-    // idle: "✦ Summarize",
     idle: "AI Summary",
     loading: "⏳ Summarizing...",
-    error: "Failed to summarize",
+    error: "Failed to summarize | Server Issue",
   };
+
   btn.textContent = labels[state];
-  btn.disabled = state === "loading";
+
+  // Disabling button when loading or when an error occurs - PreYem
+  btn.disabled = state === "loading" || state === "error";
 }
 
+// Summary Modal - PreYem
 export function showModal(summary: Summary) {
-  document.querySelector(".rs-modal-overlay")?.remove();
+  // Removing any traces of a mounted up modal before proceeding - PreYem
+  document.querySelector(".rs-modal-backgroundOverlay")?.remove();
 
+  // --- STRUCTURE ---
+  // We're building this DOM tree:
+  //
+  // <div class="rs-modal-backgroundOverlay">        ← full-screen backdrop (click outside to close)
+  //   <div class="rs-modal">
+  //     <div class="rs-modal-header">
+  //       <span class="rs-modal-title">Reddit Summary</span>
+  //       <button class="rs-modal-close">✕</button>
+  //     </div>
+  //     <div class="rs-modal-body">
+  //       <div class="rs-section">        ← Post summary section
+  //         <div class="rs-section-label">Post</div>
+  //         <p class="rs-section-text">...</p>
+  //       </div>
+  //       <div class="rs-section">        ← Community/comments section
+  //         <div class="rs-section-label">Community</div>
+  //         <p class="rs-section-text">...</p>
+  //       </div>
+  //       <div class="rs-modal-footer">...</div>
+  //     </div>
+  //   </div>
+  // </div>
+
+  // Creating the div background of the Modal + assigning it a class - PreYem
   const overlay = document.createElement("div");
-  overlay.className = "rs-modal-overlay";
+  overlay.className = "rs-modal-backgroundOverlay";
 
+  // Creating the modal itself - PreYem
   const modal = document.createElement("div");
   modal.className = "rs-modal";
 
+  // Creating the header of the modal - PreYem
   const header = document.createElement("div");
   header.className = "rs-modal-header";
 
+  // Creating the span which contains the title of the modal - PreYem
   const title = document.createElement("span");
+  const subreddit = "r/" + window.location.pathname.split("/")[2]; // "r/funny" → "funny"
   title.className = "rs-modal-title";
-  title.textContent = "Reddit Summary";
+  title.textContent = subreddit;
 
+  // Creating the button that closes the modal - PreYem
   const closeBtn = document.createElement("button");
   closeBtn.className = "rs-modal-close";
   closeBtn.textContent = "✕";
   closeBtn.addEventListener("click", closeModal);
 
+  // Appending the title and closing button to the header - PreYem
   header.appendChild(title);
   header.appendChild(closeBtn);
 
+  // Body where the AI summary is displayed - PreYem
   const body = document.createElement("div");
   body.className = "rs-modal-body";
 
+  // Post summary section
   const postSection = document.createElement("div");
   postSection.className = "rs-section";
 
@@ -73,11 +141,12 @@ export function showModal(summary: Summary) {
 
   const postText = document.createElement("p");
   postText.className = "rs-section-text";
-  postText.textContent = summary.post;
+  postText.textContent = summary.post; // The actual summary text from the API
 
   postSection.appendChild(postLabel);
   postSection.appendChild(postText);
 
+  // Community/comments summary section
   const communitySection = document.createElement("div");
   communitySection.className = "rs-section";
 
@@ -95,6 +164,9 @@ export function showModal(summary: Summary) {
   body.appendChild(postSection);
   body.appendChild(communitySection);
 
+  // --- FOOTER ---
+  // Uses innerHTML here for brevity since it's static markup with SVG icons.
+  // Safe to use here since none of this content comes from user/external input.
   const footer = document.createElement("div");
   footer.className = "rs-modal-footer";
   footer.innerHTML = `
@@ -112,17 +184,26 @@ export function showModal(summary: Summary) {
   </div>
 `;
 
+  // --- ASSEMBLY ---
   modal.appendChild(header);
   modal.appendChild(body);
-  body.appendChild(footer);
+  body.appendChild(footer); // Footer lives inside body so it scrolls with content
 
   overlay.appendChild(modal);
-  document.body.appendChild(overlay);
+  document.body.appendChild(overlay); // Attach to Reddit's page DOM
 
+  // --- CLOSE BEHAVIORS ---
+
+  // Click on the backdrop (outside the modal) to close.
+  // `e.target === overlay` is the key check: if the user clicked *inside* the modal,
+  // the event target would be a child element, not the overlay itself.
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closeModal();
   });
 
+  // Press Escape to close.
+  // We store the handler in a variable so we can remove it after it fires —
+  // otherwise the event listener would leak and stack up across multiple modal opens.
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
       closeModal();
@@ -131,12 +212,31 @@ export function showModal(summary: Summary) {
   };
   document.addEventListener("keydown", onKeyDown);
 
+  // --- ANIMATION ---
+  // We add the element to the DOM first (without the visible class),
+  // then add the class on the next animation frame.
+  //
+  // WHY: CSS transitions only animate *changes* in style. If we added the class
+  // at the same time as we appended the element, the browser would see the
+  // element as always having been in the final state — no transition plays.
+  // The requestAnimationFrame gives the browser one paint cycle to register
+  // the element in its initial (invisible) state before we trigger the transition.
   requestAnimationFrame(() => overlay.classList.add("rs-modal-visible"));
 }
 
+// ---------------------------------------------------------------------------
+// CLOSE MODAL
+// ---------------------------------------------------------------------------
+
 function closeModal() {
-  const overlay = document.querySelector(".rs-modal-overlay");
+  const overlay = document.querySelector(".rs-modal-backgroundOverlay");
   if (!overlay) return;
+
+  // Remove the class that makes it visible — this triggers the CSS fade-out transition.
   overlay.classList.remove("rs-modal-visible");
+
+  // Wait for the CSS transition to finish before removing the element from the DOM.
+  // `{ once: true }` means the listener automatically removes itself after firing once.
+  // Without this, we'd remove the element immediately (before the fade-out plays).
   overlay.addEventListener("transitionend", () => overlay.remove(), { once: true });
 }

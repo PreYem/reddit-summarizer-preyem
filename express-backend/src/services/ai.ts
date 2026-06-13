@@ -40,6 +40,7 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
           - "overwhelmingly negative" = very much criticizing OP with +95% of comments pointing towards it
           - "mixed" = strong split between support and criticism
           - "inconclusive" = too few/unclear comments
+        - "Media_info" : Answer if you received a picture/video/gif as the input for this prompt, if yes, then what was the media file and what does it contain.
 
         Important constraints:
         - Refer to the author as "OP"
