@@ -131,22 +131,28 @@ export function showModal(summary: Summary) {
   const body = document.createElement("div");
   body.className = "rs-modal-body";
 
-  // Post summary section
+
+  // Post section : 
+  // Section where the Post specific summary is taking place - PreYem
   const postSection = document.createElement("div");
   postSection.className = "rs-section";
 
+  // Title of the the post section - PreYem
   const postLabel = document.createElement("div");
   postLabel.className = "rs-section-label";
   postLabel.textContent = "Post";
 
+  // Summary of the post body - PreYem
   const postText = document.createElement("p");
   postText.className = "rs-section-text";
-  postText.textContent = summary.post; // The actual summary text from the API
+  postText.textContent = summary.post;
 
+  // Appending the post section - PreYem
   postSection.appendChild(postLabel);
   postSection.appendChild(postText);
 
-  // Community/comments summary section
+  // Community section :
+  // Community summary section
   const communitySection = document.createElement("div");
   communitySection.className = "rs-section";
 
