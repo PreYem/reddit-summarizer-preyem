@@ -131,8 +131,7 @@ export function showModal(summary: Summary) {
   const body = document.createElement("div");
   body.className = "rs-modal-body";
 
-
-  // Post section : 
+  // Post section :
   // Section where the Post specific summary is taking place - PreYem
   const postSection = document.createElement("div");
   postSection.className = "rs-section";
@@ -152,14 +151,16 @@ export function showModal(summary: Summary) {
   postSection.appendChild(postText);
 
   // Community section :
-  // Community summary section
+  // Community summary section - PreYem
   const communitySection = document.createElement("div");
   communitySection.className = "rs-section";
 
+  // Title of the the community section - PreYem
   const communityLabel = document.createElement("div");
   communityLabel.className = "rs-section-label";
   communityLabel.textContent = "Community";
 
+  // Summary of the comment section - PreYem
   const communityText = document.createElement("p");
   communityText.className = "rs-section-text";
   communityText.textContent = summary.community;
@@ -167,8 +168,27 @@ export function showModal(summary: Summary) {
   communitySection.appendChild(communityLabel);
   communitySection.appendChild(communityText);
 
+  // Community Reaction Section :
+  // Community Reaction DIV container - PreYem
+  const communityReactionSection = document.createElement("div");
+  communityReactionSection.className = "rs-section";
+
+  // Label Container - PreYem
+  const communityReactionLabel = document.createElement("div");
+  communityReactionLabel.className = "rs-section-label";
+  communityReactionLabel.textContent = "Community Reaction";
+
+  // Text container - PreYem
+  const communityReactionText = document.createElement("p");
+  communityReactionText.className = "rs-section-text";
+  communityReactionText.textContent = "summary.communityReaction";
+
+  communityReactionSection.appendChild(communityReactionLabel);
+  communityReactionSection.appendChild(communityReactionText);
+
   body.appendChild(postSection);
   body.appendChild(communitySection);
+  body.appendChild(communityReactionSection);
 
   // --- FOOTER ---
   // Uses innerHTML here for brevity since it's static markup with SVG icons.
