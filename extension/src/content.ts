@@ -10,15 +10,8 @@
  *  3. Coordinate between the API call (api.ts) and the modal (ui.ts)
  */
 
-import { fetchSummary } from './api';
-import {
-  Summary,
-  createButton,
-  showModal,
-  setButtonState,
-  getCachedSummary,
-  setCachedSummary,
-} from './ui';
+import { fetchSummary } from "./api";
+import { Summary, createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./ui";
 
 // ---------------------------------------------------------------------------
 // SCRAPING
@@ -27,7 +20,7 @@ import {
 function scrapePost() {
   // `shreddit-post` is Reddit's custom HTML web component that wraps the entire post.
   // It only exists on post/comments pages, not on the feed or subreddit listings.
-  const postEl = document.querySelector('shreddit-post');
+  const postEl = document.querySelector("shreddit-post");
 
   // If we can't find the post element, we're probably not on a post page. Bail out.
   if (!postEl) return null;
@@ -35,7 +28,7 @@ function scrapePost() {
   // The post title is stored as an HTML *attribute* on the web component, not as
   // visible inner text. Reddit puts data on the element itself for its own JS to use.
   // The `?? ''` means: "if getAttribute returns null, use an empty string instead."
-  const title = postEl.getAttribute('post-title') ?? '';
+  const title = postEl.getAttribute("post-title") ?? "";
 
   // The post body is actual rendered HTML inside the component.
   // `[id^="post-rtjson-content"]` selects any element whose id *starts with* that string
@@ -43,20 +36,17 @@ function scrapePost() {
   // `.md p` is a fallback selector for old Reddit's markdown format.
   // `?.textContent` uses optional chaining — if querySelector returns null, don't crash.
   // `.trim()` removes leading/trailing whitespace.
-  const body =
-    postEl.querySelector('[id^="post-rtjson-content"] p, .md p')
-      ?.textContent?.trim() ?? '';
+  const body = postEl.querySelector('[id^="post-rtjson-content"] p, .md p')?.textContent?.trim() ?? "";
+  const author = postEl.getAttribute("author") ?? "[deleted]";
 
   // Collect the text from comment paragraphs across the whole page.
   // `querySelectorAll` returns a NodeList, not an Array, so we wrap it in Array.from().
   // `.slice(0, 20)` limits to the first 20 comments so we don't send a massive payload.
   // `.map(...)` extracts the text content from each paragraph element.
   // `.filter(Boolean)` removes any empty strings or falsy values from the array.
-  const comments = Array.from(
-    document.querySelectorAll('shreddit-comment p')
-  )
+  const comments = Array.from(document.querySelectorAll("shreddit-comment p"))
     .slice(0, 20)
-    .map((el) => el.textContent?.trim() ?? '')
+    .map((el) => el.textContent?.trim() ?? "")
     .filter(Boolean);
 
   return { title, body, comments };
@@ -69,15 +59,15 @@ function scrapePost() {
 function inject() {
   // Prevent double-injection: if our button already exists on the page, do nothing.
   // This can happen if `inject()` is called multiple times (e.g. on URL change).
-  if (document.querySelector('.rs-btn')) return;
+  if (document.querySelector(".rs-btn")) return;
 
   // Again, make sure we're on a post page before trying to inject.
-  const postEl = document.querySelector('shreddit-post');
+  const postEl = document.querySelector("shreddit-post");
   if (!postEl) return;
 
   // The overflow menu is the "..." button in Reddit's post action bar.
   // We use it as a reference point to know *where* to insert our button.
-  const overflowMenu = postEl.querySelector('shreddit-post-overflow-menu');
+  const overflowMenu = postEl.querySelector("shreddit-post-overflow-menu");
   if (!overflowMenu) return;
 
   // `createButton()` is defined in ui.ts — it builds and returns a <button> element
@@ -85,7 +75,7 @@ function inject() {
   const btn = createButton();
 
   // Wire up the click handler for our button.
-  btn.addEventListener('click', async (e) => {
+  btn.addEventListener("click", async (e) => {
     // Stop the click from bubbling up to Reddit's own click handlers,
     // which might interfere (e.g. closing a dropdown or navigating away).
     e.stopPropagation();
@@ -102,13 +92,13 @@ function inject() {
     }
 
     // No cache — show loading state and kick off the API call.
-    setButtonState(btn, 'loading');
+    setButtonState(btn, "loading");
 
     try {
       // Scrape the post content from the DOM right now (at click time, not inject time),
       // so we get the most up-to-date comments.
       const data = scrapePost();
-      if (!data) throw new Error('Failed to scrape post');
+      if (!data) throw new Error("Failed to scrape post");
 
       // Send the scraped data to the background script → backend → Anthropic API.
       // This is async and may take a few seconds.
@@ -118,16 +108,16 @@ function inject() {
       setCachedSummary(summary);
 
       // Reset the button to its normal state and open the modal.
-      setButtonState(btn, 'idle');
+      setButtonState(btn, "idle");
       showModal(summary);
     } catch (err) {
       // Something went wrong (network error, scrape failure, API error, etc.)
-      console.error('[RS] Error:', err);
-      setButtonState(btn, 'error');
+      console.error("[RS] Error:", err);
+      setButtonState(btn, "error");
 
       // Automatically revert the button back to idle after 2 seconds
       // so the user can try again.
-      setTimeout(() => setButtonState(btn, 'idle'), 2000);
+      setTimeout(() => setButtonState(btn, "idle"), 2000);
     }
   });
 
@@ -147,7 +137,7 @@ function inject() {
 function tryInject() {
   // Only inject on post/comments pages — those URLs always contain "/comments/".
   // We don't want the button appearing on subreddit feeds, search results, etc.
-  if (window.location.pathname.includes('/comments/')) {
+  if (window.location.pathname.includes("/comments/")) {
     // Delay injection by 1.5 seconds because Reddit's SPA renders its components
     // asynchronously after navigation. If we try immediately, `shreddit-post`
     // won't exist in the DOM yet.

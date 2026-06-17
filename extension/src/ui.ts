@@ -23,7 +23,7 @@
 export interface Summary {
   post: string; // Summary of the post itself
   community: string; // Summary of the comment section / community reaction
-  community_reaction: "positive" | "overwhelmingly positive" | "negative" | "overwhelmingly negative" | "mixed" | "inconclusive";
+  communityReaction: string;
 }
 
 // Caching the summary in memory per post, meaning clicking the AI Summary button and closing the modal and opening it again will bring the same response
@@ -181,7 +181,7 @@ export function showModal(summary: Summary) {
   // Text container - PreYem
   const communityReactionText = document.createElement("p");
   communityReactionText.className = "rs-section-text";
-  communityReactionText.textContent = "summary.communityReaction";
+  communityReactionText.textContent = summary.communityReaction;
 
   communityReactionSection.appendChild(communityReactionLabel);
   communityReactionSection.appendChild(communityReactionText);
@@ -190,9 +190,7 @@ export function showModal(summary: Summary) {
   body.appendChild(communitySection);
   body.appendChild(communityReactionSection);
 
-  // --- FOOTER ---
-  // Uses innerHTML here for brevity since it's static markup with SVG icons.
-  // Safe to use here since none of this content comes from user/external input.
+  // Footer where socials are contained - PreYem
   const footer = document.createElement("div");
   footer.className = "rs-modal-footer";
   footer.innerHTML = `
@@ -210,26 +208,22 @@ export function showModal(summary: Summary) {
   </div>
 `;
 
-  // --- ASSEMBLY ---
+  // Assembling the header + body + footer - PreYem
   modal.appendChild(header);
   modal.appendChild(body);
-  body.appendChild(footer); // Footer lives inside body so it scrolls with content
+  body.appendChild(footer);
 
   overlay.appendChild(modal);
-  document.body.appendChild(overlay); // Attach to Reddit's page DOM
+  document.body.appendChild(overlay);
 
-  // --- CLOSE BEHAVIORS ---
+  // --- Closing BEHAVIORS ---
 
-  // Click on the backdrop (outside the modal) to close.
-  // `e.target === overlay` is the key check: if the user clicked *inside* the modal,
-  // the event target would be a child element, not the overlay itself.
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeModal();
+  // Closing the modal if user clicks outside the modal container - PreYem
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeModal();
   });
 
-  // Press Escape to close.
-  // We store the handler in a variable so we can remove it after it fires —
-  // otherwise the event listener would leak and stack up across multiple modal opens.
+  // Adding ESCAPE button to close the modal - PreYem
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
       closeModal();
@@ -239,21 +233,10 @@ export function showModal(summary: Summary) {
   document.addEventListener("keydown", onKeyDown);
 
   // --- ANIMATION ---
-  // We add the element to the DOM first (without the visible class),
-  // then add the class on the next animation frame.
-  //
-  // WHY: CSS transitions only animate *changes* in style. If we added the class
-  // at the same time as we appended the element, the browser would see the
-  // element as always having been in the final state — no transition plays.
-  // The requestAnimationFrame gives the browser one paint cycle to register
-  // the element in its initial (invisible) state before we trigger the transition.
   requestAnimationFrame(() => overlay.classList.add("rs-modal-visible"));
 }
 
-// ---------------------------------------------------------------------------
-// CLOSE MODAL
-// ---------------------------------------------------------------------------
-
+// Closing Modal Logic - PreYem
 function closeModal() {
   const overlay = document.querySelector(".rs-modal-backgroundOverlay");
   if (!overlay) return;

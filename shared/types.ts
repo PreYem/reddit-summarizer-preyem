@@ -7,4 +7,5 @@ export interface SummarizeRequest {
 export interface SummarizeResponse {
   post: string;
   community: string;
+  communityReaction: string;
 }

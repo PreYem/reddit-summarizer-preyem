@@ -17,39 +17,43 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
         role: "user",
         content: `
         You are a strict Reddit post summarizer.
-
         Return ONLY a valid JSON object.
         Do NOT include markdown, code fences, explanations, or extra text.
-
         Follow this schema exactly:
-
         {
           "post": string,
           "community": string,
-          "community_reaction": "positive" | "overwhelmingly positive" | "negative" | "overwhelmingly negative" | "mixed" | "inconclusive"
+          "communityReaction": string
         }
-
         Rules:
-        - "post": 2-5 sentences summarizing ONLY what OP said. Do not add opinions or external info.
-        - "community": 1-3 sentences summarizing the comments and what people had to say. Base only on provided comments.
+        - "post": Every 10 lines of text needs to be reduced to 2-3 lines summarizing ONLY what OP said. Do not add opinions or external info. Include critical details.
+        - "community": 2-3 sentences summarizing the comments and what people had to say. Base only on provided comments.
           Do not include the reaction of the community here.
-        - "community_reaction": classify sentiment strictly:
-          - "positive" = mostly supporting OP or around 70% of comments pointing towards it
-          - "overwhelmingly positive" = very supportive of the OP with +95% of comments pointing towards it
-          - "negative" = mostly criticizing OP or around 70% of comments pointing towards it
-          - "overwhelmingly negative" = very much criticizing OP with +95% of comments pointing towards it
-          - "mixed" = strong split between support and criticism
-          - "inconclusive" = too few/unclear comments
-        - "Media_info" : Answer if you received a picture/video/gif as the input for this prompt, if yes, then what was the media file and what does it contain.
+        - "communityReaction": a short label followed by " | " followed by one sentence explaining the sentiment.
+          Labels to use:
+          - "Positive" = mostly supporting OP (~70%+ of comments)
+          - "Overwhelmingly Positive" = very supportive of OP (+95% of comments)
+          - "Negative" = mostly criticizing OP (~70%+ of comments)
+          - "Overwhelmingly Negative" = very critical of OP (+95% of comments)
+          - "Mixed" = strong split between support and criticism
+          - "Inconclusive" = too few or unclear comments
+
+          Examples of valid output:
+          - "Positive | The community largely agrees with OP and shares similar experiences."
+          - "Inconclusive | There are too few comments to determine a clear community reaction."
+          - "Mixed | Commenters are sharply divided, with equal amounts of support and criticism."
+          - "Negative | Most commenters criticize OP's decision and disagree with their reasoning."
+
+          Always follow the exact format: "Label | One sentence."
 
         Important constraints:
-        - Refer to the author as "OP"
+        - Refer to the author as "OP" or his reddit handler sent in the input
         - Do not invent details not present in title/body/comments
-        - If comments are missing, assume "inconclusive" for community reaction
+        - If comments are missing, use "Inconclusive | There are no comments to base a reaction on."
         - Keep output valid JSON only
 
         Input:
-
+        OP handler : u/johnDoe
         Title: ${data.title}
         Post body: ${data.body || "(no body, title only)"}
         Top comments:
@@ -68,10 +72,8 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
     .trim();
 
   console.log("Parsed response");
-
   console.log(clean);
 
   const parsed: SummarizeResponse = JSON.parse(clean);
-
   return parsed;
 }
