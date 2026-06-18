@@ -11,155 +11,114 @@
  */
 
 import { fetchSummary } from "./api";
-import { Summary, createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./ui";
+import { createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./ui";
 
-// ---------------------------------------------------------------------------
-// SCRAPING
-// ---------------------------------------------------------------------------
-
+// Function to scrab the post for data processing to be sent to the backend - PreYem
 function scrapePost() {
-  // `shreddit-post` is Reddit's custom HTML web component that wraps the entire post.
-  // It only exists on post/comments pages, not on the feed or subreddit listings.
+  // Grabbing the HTML tag containing the post - PreYem
   const postEl = document.querySelector("shreddit-post");
 
-  // If we can't find the post element, we're probably not on a post page. Bail out.
+  // Returning null if post tag isn't found - PreYem
   if (!postEl) return null;
 
-  // The post title is stored as an HTML *attribute* on the web component, not as
-  // visible inner text. Reddit puts data on the element itself for its own JS to use.
-  // The `?? ''` means: "if getAttribute returns null, use an empty string instead."
+  // Grabbing current subreddit from the URL - PreYem
+  const currentSubreddit = "r/" + window.location.pathname.split("/")[2];
+
+  // Grabbing post title from attribute - PreYem
   const title = postEl.getAttribute("post-title") ?? "";
 
-  // The post body is actual rendered HTML inside the component.
-  // `[id^="post-rtjson-content"]` selects any element whose id *starts with* that string
-  // because Reddit generates dynamic/unique IDs (e.g. "post-rtjson-content-abc123").
-  // `.md p` is a fallback selector for old Reddit's markdown format.
-  // `?.textContent` uses optional chaining — if querySelector returns null, don't crash.
-  // `.trim()` removes leading/trailing whitespace.
+  // Post body - PreYem
   const body = postEl.querySelector('[id^="post-rtjson-content"] p, .md p')?.textContent?.trim() ?? "";
+
+  // OP or Original Poster - PreYem
   const author = postEl.getAttribute("author") ?? "[deleted]";
 
-  // Collect the text from comment paragraphs across the whole page.
-  // `querySelectorAll` returns a NodeList, not an Array, so we wrap it in Array.from().
-  // `.slice(0, 20)` limits to the first 20 comments so we don't send a massive payload.
-  // `.map(...)` extracts the text content from each paragraph element.
-  // `.filter(Boolean)` removes any empty strings or falsy values from the array.
-  const comments = Array.from(document.querySelectorAll("shreddit-comment p"))
-    .slice(0, 20)
+  // Grabbing top 100 comments (no comment replies included) - PreYem
+  const topLevel = Array.from(document.querySelectorAll('shreddit-comment[depth="0"] p'))
     .map((el) => el.textContent?.trim() ?? "")
     .filter(Boolean);
 
-  return { title, body, comments };
+  const comments = topLevel.slice(0, 100);
+
+  return { currentSubreddit, title, body, author, comments };
 }
 
-// ---------------------------------------------------------------------------
-// BUTTON INJECTION
-// ---------------------------------------------------------------------------
-
+// AI Summary injected button - PreYem
 function inject() {
-  // Prevent double-injection: if our button already exists on the page, do nothing.
-  // This can happen if `inject()` is called multiple times (e.g. on URL change).
+  // Check if the button already exists - PreYem
   if (document.querySelector(".rs-btn")) return;
 
-  // Again, make sure we're on a post page before trying to inject.
+  // Making sure we're on a clicked post rather than the feed page - PreYem
   const postEl = document.querySelector("shreddit-post");
   if (!postEl) return;
 
-  // The overflow menu is the "..." button in Reddit's post action bar.
-  // We use it as a reference point to know *where* to insert our button.
+  // Targeting the ... reddit post menu for AI Summary injection location refrence - PreYem
   const overflowMenu = postEl.querySelector("shreddit-post-overflow-menu");
   if (!overflowMenu) return;
 
-  // `createButton()` is defined in ui.ts — it builds and returns a <button> element
-  // with the correct class name and default label ("AI Summary").
-  const btn = createButton();
+  // Creating the button - PreYem
+  const injectedSummaryButton = createButton();
 
-  // Wire up the click handler for our button.
-  btn.addEventListener("click", async (e) => {
-    // Stop the click from bubbling up to Reddit's own click handlers,
-    // which might interfere (e.g. closing a dropdown or navigating away).
-    e.stopPropagation();
-    e.preventDefault();
-    e.stopImmediatePropagation(); // Also stops other listeners on *this* element
+  // Adding event listen for the button itself - PreYem
+  injectedSummaryButton.addEventListener("click", async (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    event.stopImmediatePropagation();
 
-    // Check if we already summarized this post in this session.
-    // getCachedSummary() looks up the current URL in an in-memory Map.
-    const cached = getCachedSummary();
-    if (cached) {
-      // We have a cached result — skip the API call and show the modal immediately.
-      showModal(cached);
+    // Check if we already summurized this post in case user exits the modal then tries again - PreYem
+    const cachedSummary = getCachedSummary();
+    // If summary is still cached, we display it again to avoid unnecessary API calls - PreYem
+    if (cachedSummary) {
+      showModal(cachedSummary);
       return;
     }
 
-    // No cache — show loading state and kick off the API call.
-    setButtonState(btn, "loading");
+    // If no cachedSummary is found, we call the backend and send the correct data.
+    setButtonState(injectedSummaryButton, "loading");
 
     try {
-      // Scrape the post content from the DOM right now (at click time, not inject time),
-      // so we get the most up-to-date comments.
+      // Calling the scrap function to get the data then send it rather than scrap when page loads - PreYem
       const data = scrapePost();
       if (!data) throw new Error("Failed to scrape post");
 
-      // Send the scraped data to the background script → backend → Anthropic API.
-      // This is async and may take a few seconds.
+      // Sending the scrapped data to the backend for processing - PreYem
       const summary = await fetchSummary(data);
 
-      // Save the result so we don't call the API again for this post.
+      // Saving the result in the cache function for future use if user is still on the same post page - PreYem
       setCachedSummary(summary);
 
-      // Reset the button to its normal state and open the modal.
-      setButtonState(btn, "idle");
-      showModal(summary);
-    } catch (err) {
-      // Something went wrong (network error, scrape failure, API error, etc.)
-      console.error("[RS] Error:", err);
-      setButtonState(btn, "error");
+      // Reset the button to its normal state - PreYem
+      setButtonState(injectedSummaryButton, "idle");
 
-      // Automatically revert the button back to idle after 2 seconds
-      // so the user can try again.
-      setTimeout(() => setButtonState(btn, "idle"), 2000);
+      // Opening the summary modal with the summary data coming from the backend - PreYem
+      showModal(summary);
+    } catch (error) {
+      // In case errors come up during backend call - PreYem
+      console.error("[RS] Error:", error);
+      setButtonState(injectedSummaryButton, "error");
+
+      // Reverting button to it's original state in case there was an issue - PreYem
+      setTimeout(() => setButtonState(injectedSummaryButton, "idle"), 2000);
     }
   });
 
-  // Insert our button *before* the overflow menu in the post's action bar.
-  // `overflowMenu.parentElement` is the action bar container.
-  // `insertBefore(newNode, referenceNode)` places newNode just before referenceNode.
-  overflowMenu.parentElement?.insertBefore(btn, overflowMenu);
+  overflowMenu.parentElement?.insertBefore(injectedSummaryButton, overflowMenu);
 }
 
-// ---------------------------------------------------------------------------
-// NAVIGATION DETECTION
-// ---------------------------------------------------------------------------
-
-// Reddit is a Single Page Application (SPA) — navigating between pages does NOT
-// trigger a full browser reload. So we can't just run `inject()` once on load.
-
+// Injecting button only when the current page is a post page - PreYem
 function tryInject() {
-  // Only inject on post/comments pages — those URLs always contain "/comments/".
-  // We don't want the button appearing on subreddit feeds, search results, etc.
   if (window.location.pathname.includes("/comments/")) {
-    // Delay injection by 1.5 seconds because Reddit's SPA renders its components
-    // asynchronously after navigation. If we try immediately, `shreddit-post`
-    // won't exist in the DOM yet.
-    // TODO: A more robust approach would be a MutationObserver that waits
-    // specifically for `shreddit-post` to appear instead of using a fixed delay.
-    setTimeout(inject, 1500);
+    inject();
   }
 }
 
-// Run once on initial page load.
 tryInject();
 
 // Track the current URL so we can detect client-side navigation.
 let lastUrl = window.location.href;
 
-// MutationObserver fires whenever the DOM changes.
-// Reddit's SPA updates the DOM (not the URL bar directly) when navigating,
-// so this is the most reliable way to detect route changes.
-// We observe `document.body` with `childList: true, subtree: true` to catch
-// any DOM mutation anywhere on the page.
 new MutationObserver(() => {
-  // Only act if the URL actually changed (most DOM mutations are unrelated to navigation).
+  // Attempting to inject the button when URL changes + we're on a post page - PreYem
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
     tryInject(); // Attempt to inject the button on the new page.
