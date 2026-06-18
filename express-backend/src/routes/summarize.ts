@@ -5,21 +5,21 @@ import type { SummarizeRequest, SummarizeResponse } from "../types";
 const router = Router();
 const MAX_BODY_LENGTH = 8_000;
 const MAX_COMMENT_LENGTH = 500;
-const MAX_COMMENTS = 20;
+const MAX_COMMENTS = 100;
 
-router.post("/", async (request: Request, res: Response) => {
+router.post("/", async (request: Request, response: Response) => {
   const { title, body, comments, currentSubreddit, author } = request.body as SummarizeRequest;
 
-  console.log("[Backend] Request received:", {
-    title,
-    bodyLength: body?.length,
-    commentCount: comments?.length,
-    currentSubreddit,
-    author,
-  });
+  // console.log("[Backend] Request received:", {
+  //   title,
+  //   bodyLength: body?.length,
+  //   commentCount: comments?.length,
+  //   currentSubreddit,
+  //   author,
+  // });
 
   if (!title || typeof title !== "string") {
-    res.status(400).json({ error: "title is required" });
+    response.status(400).json({ error: "title is required" });
     return;
   }
 
@@ -37,17 +37,17 @@ router.post("/", async (request: Request, res: Response) => {
   const safeAuthor = typeof author === "string" && author ? author : "[deleted]";
 
   try {
-    const response: SummarizeResponse = await summarize({
+    const backendResponse: SummarizeResponse = await summarize({
       title,
       body: bodyText,
       comments: sanitizedComments,
       currentSubreddit: safeSubreddit,
       author: safeAuthor,
     });
-    res.json(response);
+    response.json(backendResponse);
   } catch (err) {
     console.error("[Backend] AI error:", err);
-    res.status(500).json({ error: "Failed to generate summary." });
+    response.status(500).json({ error: "Failed to generate summary." });
   }
 });
 

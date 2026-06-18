@@ -51,7 +51,7 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
         - If comments are missing, use "Inconclusive | There are no comments to base a reaction on. Based on 0 comments."
         - Keep output valid JSON only
         Input:
-        Current Subreddit: ${data.currentSubreddit}
+        Current Subreddit: ${data.currentSubreddit} | if it's [deleted] you can mention it at the start of the summary that the OP deleted his account.
         OP handler: ${data.author}
         Title: ${data.title}
         Post body: ${data.body || "(no body, title only)"}
