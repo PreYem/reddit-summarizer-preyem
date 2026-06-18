@@ -3,7 +3,6 @@ import type { SummarizeRequest, SummarizeResponse } from "../../shared/types";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 
-
 export async function fetchSummary(data: SummarizeRequest): Promise<SummarizeResponse> {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({ type: "SUMMARIZE", data, backendUrl: BACKEND_URL }, (response) => {
@@ -20,6 +19,8 @@ export async function fetchSummary(data: SummarizeRequest): Promise<SummarizeRes
         reject(new Error(response.error));
         return;
       }
+      console.log("comments :")
+      console.log(data.comments)
       resolve(response.summary);
     });
   });

@@ -1,6 +1,8 @@
 export interface SummarizeRequest {
+  currentSubreddit: string;
   title: string;
   body: string;
+  author: string;
   comments: string[];
 }
 

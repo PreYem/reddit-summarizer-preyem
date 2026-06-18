@@ -1,14 +1,4 @@
-/**
- * content.ts
- *
- * This is the "content script" — Chrome injects this file directly into Reddit's page.
- * It runs in the same browser tab as Reddit, so it has access to `document`, `window`, etc.
- *
- * Responsibilities:
- *  1. Scrape the post title, body, and comments from the DOM
- *  2. Inject the "AI Summary" button into Reddit's UI
- *  3. Coordinate between the API call (api.ts) and the modal (ui.ts)
- */
+// Page where we inject AI Summary button, scrape the post content and send it to the backs
 
 import { fetchSummary } from "./api";
 import { createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./ui";
@@ -34,7 +24,7 @@ function scrapePost() {
   const author = postEl.getAttribute("author") ?? "[deleted]";
 
   // Grabbing top 100 comments (no comment replies included) - PreYem
-  const topLevel = Array.from(document.querySelectorAll('shreddit-comment[depth="0"] p'))
+  const topLevel = Array.from(document.querySelectorAll('shreddit-comment[depth="1"] p'))
     .map((el) => el.textContent?.trim() ?? "")
     .filter(Boolean);
 
@@ -108,7 +98,7 @@ function inject() {
 // Injecting button only when the current page is a post page - PreYem
 function tryInject() {
   if (window.location.pathname.includes("/comments/")) {
-    inject();
+    setTimeout(inject, 1500);
   }
 }
 
