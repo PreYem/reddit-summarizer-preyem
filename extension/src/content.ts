@@ -23,12 +23,24 @@ function scrapePost() {
   // OP or Original Poster - PreYem
   const author = postEl.getAttribute("author") ?? "[deleted]";
 
-  // Grabbing top 100 comments (no comment replies included) - PreYem
-  const topLevel = Array.from(document.querySelectorAll('shreddit-comment[depth="1"] p'))
-    .map((el) => el.textContent?.trim() ?? "")
-    .filter(Boolean);
+  const topLevelComments = Array.from(document.querySelectorAll('shreddit-comment[depth="0"], shreddit-comment[depth="1"]')).filter((el) => {
+    // Only keep ones whose parent isn't another shreddit-comment (true top-level)
+    return !el.closest("shreddit-comment")?.parentElement?.closest("shreddit-comment");
+  });
 
-  const comments = topLevel.slice(0, 100);
+  const comments = Array.from(document.querySelectorAll("shreddit-comment"))
+    .map((commentEl) => {
+      const thingId = commentEl.getAttribute("thingid");
+      const textEl = commentEl.querySelector(`#${thingId}-post-rtjson-content`);
+      if (!textEl) return "";
+      // Join all <p> tags inside this comment's own content block into one string
+      return Array.from(textEl.querySelectorAll("p"))
+        .map((p) => p.textContent?.trim() ?? "")
+        .filter(Boolean)
+        .join(" ");
+    })
+    .filter(Boolean)
+    .slice(0, 100);
 
   return { currentSubreddit, title, body, author, comments };
 }

@@ -4,10 +4,8 @@ import type { SummarizeRequest, SummarizeResponse } from "../types";
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function summarize(data: SummarizeRequest): Promise<SummarizeResponse> {
-  const slicedComments = data.comments.slice(0, 100);
-  const commentCount = slicedComments.length;
+  const comments = data.comments.slice(0, 100);
 
-  const comments = slicedComments.map((c, i) => `Comment ${i + 1}: ${c}`).join("\n");
 
   const message = await client.messages.create({
     model: "claude-haiku-4-5",
@@ -37,7 +35,7 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
           - "Overwhelmingly Negative" = very critical of OP (+95% of comments)
           - "Mixed" = strong split between support and criticism
           - "Inconclusive" = too few or unclear comments
-          - Also mention the amount of comments that the reaction is based on, which is ${commentCount}
+          - Also mention the amount of comments that the reaction is based on, which is ${comments.length}
           Examples of valid output:
           - "Positive | The community largely agrees with OP and shares similar experiences. Based on 14 comments."
           - "Inconclusive | There are too few comments to determine a clear community reaction. Based on 2 comments."
@@ -51,8 +49,8 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
         - If comments are missing, use "Inconclusive | There are no comments to base a reaction on. Based on 0 comments."
         - Keep output valid JSON only
         Input:
-        Current Subreddit: ${data.currentSubreddit} | if it's [deleted] you can mention it at the start of the summary that the OP deleted his account.
-        OP handler: ${data.author}
+        Current Subreddit: ${data.currentSubreddit} | Use this subreddit to figure out more context on the topic (example : r/OffMyChest is for confessions...etc)
+        OP handler: ${data.author} | if it's [deleted] you can mention it at the start of the summary that the OP deleted his account.
         Title: ${data.title}
         Post body: ${data.body || "(no body, title only)"}
         Top comments:
@@ -61,6 +59,7 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
       },
     ],
   });
+
 
   const block = message.content[0];
   if (block.type !== "text") throw new Error("Unexpected response type");

@@ -3,6 +3,12 @@
   "private": true,
   "workspaces": [
     "extension",
-    "backend"
-  ]
+    "express-backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace express-backend\" \"npm run dev --workspace extension\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
 }
