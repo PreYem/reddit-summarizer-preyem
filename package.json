@@ -6,7 +6,7 @@
     "express-backend"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace express-backend\" \"npm run dev --workspace extension\""
+    "dev:all": "concurrently \"npm run dev --workspace express-backend\" \"npm run dev --workspace extension\""
   },
   "devDependencies": {
     "concurrently": "^10.0.3"
