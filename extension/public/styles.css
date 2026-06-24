@@ -183,3 +183,55 @@
 .rs-modal-footer-links a[title="GitLab"]:hover {
   color: #ff4500;
 }
+
+/* Community Reaction Badge Styles */
+.rs-reaction-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.05);
+  display: inline-block;
+    margin-top : -8px
+}
+
+.rs-reaction-label-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+
+}
+
+/* Reaction type colors */
+.rs-reaction-badge.reaction-overwhelmingly-positive {
+  color: #46d160;
+  border-left: 3px solid #46d160;
+}
+
+.rs-reaction-badge.reaction-positive {
+  color: #7ec84e;
+  border-left: 3px solid #7ec84e;
+}
+
+.rs-reaction-badge.reaction-mixed {
+  color: #ffa500;
+  border-left: 3px solid #ffa500;
+}
+
+.rs-reaction-badge.reaction-negative {
+  color: #ff6b6b;
+  border-left: 3px solid #ff6b6b;
+}
+
+.rs-reaction-badge.reaction-overwhelmingly-negative {
+  color: #cc0000;
+  border-left: 3px solid #cc0000;
+}
+
+.rs-reaction-badge.reaction-inconclusive {
+  color: #818384;
+  border-left: 3px solid #818384;
+}

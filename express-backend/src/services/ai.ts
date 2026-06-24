@@ -6,6 +6,8 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 export async function summarize(data: SummarizeRequest): Promise<SummarizeResponse> {
   const comments = data.comments.slice(0, 100);
 
+  // Commenting starts here - PreYem
+
   const message = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 400,
@@ -61,15 +63,23 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
 
   const block = message.content[0];
   if (block.type !== "text") throw new Error("Unexpected response type");
-
   const clean = block.text
     .replace(/```json\n?/g, "")
     .replace(/```\n?/g, "")
     .trim();
-
   const parsed: SummarizeResponse = JSON.parse(clean);
 
-  console.log(parsed);
+  // Commenting ends here - PreYem
 
+  // Dummy data to uncomment when debugging the UI based on data coming from the backend and avoiding AI API cost - PreYem
+  // const parsed: SummarizeResponse = {
+  //   post: "u/JohnDoe shares their frustration about a workplace conflict. OP explains how their manager dismissed their ideas in a meeting, making them feel undervalued. They're considering whether to confront the manager or start looking for a new job.",
+  //   community:
+  //     "Most commenters sympathize with OP's situation and share similar experiences. Several suggest documenting interactions and having a direct conversation with the manager. A few recommend exploring other job opportunities if the workplace culture is toxic.",
+  //   communityReaction: "Overwhelmingly Positive",
+  //   communityReactionBreakdown: "The community is supportive of OP and offers constructive advice. Based on 18 comments.",
+  // };
+
+  console.log(parsed);
   return parsed;
 }

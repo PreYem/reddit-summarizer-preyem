@@ -1,3 +1,5 @@
+import { createReactionSection } from "./modalReaction";
+import { SummarizeResponse } from "@shared/types";
 /**
  * ui.ts
  *
@@ -20,23 +22,19 @@
 // This is shared with the backend via the /shared/types file.
 
 // The AI Response type coming from the backend and synced with the frontend - PreYem
-export interface Summary {
-  post: string; // Summary of the post itself
-  community: string; // Summary of the comment section / community reaction
-  communityReaction: string;
-}
+
 
 // Caching the summary in memory per post, meaning clicking the AI Summary button and closing the modal and opening it again will bring the same response
 // without sending an API request a second time to avoid Token usage ramping up - PreYem
-const summaryCache = new Map<string, Summary>();
+const summaryCache = new Map<string, SummarizeResponse>();
 
 // Returns the cached summary for the current page URL, or null if there isn't one.
-export function getCachedSummary(): Summary | null {
+export function getCachedSummary(): SummarizeResponse | null {
   return summaryCache.get(window.location.href) ?? null;
 }
 
 // Saves a summary for the current page URL.
-export function setCachedSummary(summary: Summary): void {
+export function setCachedSummary(summary: SummarizeResponse): void {
   summaryCache.set(window.location.href, summary);
 }
 
@@ -72,7 +70,7 @@ export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading"
 }
 
 // Summary Modal - PreYem
-export function showModal(summary: Summary) {
+export function showModal(summary: SummarizeResponse) {
   // Removing any traces of a mounted up modal before proceeding - PreYem
   document.querySelector(".rs-modal-backgroundOverlay")?.remove();
 
@@ -188,7 +186,7 @@ export function showModal(summary: Summary) {
 
   body.appendChild(postSection);
   body.appendChild(communitySection);
-  body.appendChild(communityReactionSection);
+  body.appendChild(createReactionSection(summary));
 
   // Footer where socials are contained - PreYem
   const footer = document.createElement("div");

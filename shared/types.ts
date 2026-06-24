@@ -10,4 +10,5 @@ export interface SummarizeResponse {
   post: string;
   community: string;
   communityReaction: string;
+  communityReactionBreakdown: string;
 }
