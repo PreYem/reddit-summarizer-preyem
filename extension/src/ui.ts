@@ -23,7 +23,6 @@ import { SummarizeResponse } from "@shared/types";
 
 // The AI Response type coming from the backend and synced with the frontend - PreYem
 
-
 // Caching the summary in memory per post, meaning clicking the AI Summary button and closing the modal and opening it again will bring the same response
 // without sending an API request a second time to avoid Token usage ramping up - PreYem
 const summaryCache = new Map<string, SummarizeResponse>();
@@ -70,7 +69,7 @@ export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading"
 }
 
 // Summary Modal - PreYem
-export function showModal(summary: SummarizeResponse) {
+export function showModal(summary: SummarizeResponse, author: string) {
   // Removing any traces of a mounted up modal before proceeding - PreYem
   document.querySelector(".rs-modal-backgroundOverlay")?.remove();
 
@@ -142,7 +141,7 @@ export function showModal(summary: SummarizeResponse) {
   // Summary of the post body - PreYem
   const postText = document.createElement("p");
   postText.className = "rs-section-text";
-  postText.textContent = summary.post;
+  postText.innerHTML = boldOpHandle(summary.post, author); // Use innerHTML to render the <strong> tag
 
   // Appending the post section - PreYem
   postSection.appendChild(postLabel);
@@ -246,4 +245,14 @@ function closeModal() {
   // `{ once: true }` means the listener automatically removes itself after firing once.
   // Without this, we'd remove the element immediately (before the fade-out plays).
   overlay.addEventListener("transitionend", () => overlay.remove(), { once: true });
+}
+
+function boldOpHandle(text: string, author: string): string {
+  if (!author || author === "[deleted]") return text;
+
+  const handle = "u/" + author;
+  const boldHandle = "<strong >" + handle + "</strong>";
+
+  // Replace only the first occurrence
+  return text.replace(handle, boldHandle);
 }

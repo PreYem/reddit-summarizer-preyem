@@ -73,7 +73,7 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
 
   // Dummy data to uncomment when debugging the UI based on data coming from the backend and avoiding AI API cost - PreYem
   // const parsed: SummarizeResponse = {
-  //   post: "u/JohnDoe shares their frustration about a workplace conflict. OP explains how their manager dismissed their ideas in a meeting, making them feel undervalued. They're considering whether to confront the manager or start looking for a new job.",
+  //   post: "u/" + data.author + " shares their frustration about a workplace conflict. OP explains how their manager dismissed their ideas in a meeting, making them feel undervalued. They're considering whether to confront the manager or start looking for a new job.",
   //   community:
   //     "Most commenters sympathize with OP's situation and share similar experiences. Several suggest documenting interactions and having a direct conversation with the manager. A few recommend exploring other job opportunities if the workplace culture is toxic.",
   //   communityReaction: "Overwhelmingly Positive",

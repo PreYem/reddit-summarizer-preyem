@@ -71,7 +71,8 @@ function inject() {
     const cachedSummary = getCachedSummary();
     // If summary is still cached, we display it again to avoid unnecessary API calls - PreYem
     if (cachedSummary) {
-      showModal(cachedSummary);
+      const data = scrapePost();
+      showModal(cachedSummary, data?.author ?? "[deleted]"); // Pass author
       return;
     }
 
@@ -93,7 +94,7 @@ function inject() {
       setButtonState(injectedSummaryButton, "idle");
 
       // Opening the summary modal with the summary data coming from the backend - PreYem
-      showModal(summary);
+      showModal(summary, data.author); // Pass author here
     } catch (error) {
       // In case errors come up during backend call - PreYem
       console.error("[RS] Error:", error);
