@@ -5,13 +5,13 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "npm run build:chrome && npm run build:gecko",
-    "build:chrome": "vite build --outDir dist/chrome && node -e \"const fs=require('fs');fs.copyFileSync('public/background.js','dist/chrome/background.js');fs.copyFileSync('public/styles.css','dist/chrome/styles.css');fs.copyFileSync('public/popup.html','dist/chrome/popup.html');fs.copyFileSync('public/popup.css','dist/chrome/popup.css');fs.copyFileSync('public/manifest.chrome.json','dist/chrome/manifest.json');fs.mkdirSync('dist/chrome/icons',{recursive:true});fs.copyFileSync('public/icons/icon512.png','dist/chrome/icons/icon512.png')\"",
+    "build": "npm run build:chromium && npm run build:gecko",
+    "build:chromium": "vite build --outDir dist/chromium && node -e \"const fs=require('fs');fs.copyFileSync('public/background.js','dist/chromium/background.js');fs.copyFileSync('public/styles.css','dist/chromium/styles.css');fs.copyFileSync('public/popup.html','dist/chromium/popup.html');fs.copyFileSync('public/popup.css','dist/chromium/popup.css');fs.copyFileSync('public/manifest.chromium.json','dist/chromium/manifest.json');fs.mkdirSync('dist/chromium/icons',{recursive:true});fs.copyFileSync('public/icons/icon512.png','dist/chromium/icons/icon512.png')\"",
     "build:gecko": "vite build --outDir dist/gecko && node -e \"const fs=require('fs');fs.copyFileSync('public/background.js','dist/gecko/background.js');fs.copyFileSync('public/styles.css','dist/gecko/styles.css');fs.copyFileSync('public/popup.html','dist/gecko/popup.html');fs.copyFileSync('public/popup.css','dist/gecko/popup.css');fs.copyFileSync('public/manifest.gecko.json','dist/gecko/manifest.json');fs.mkdirSync('dist/gecko/icons',{recursive:true});fs.copyFileSync('public/icons/icon512.png','dist/gecko/icons/icon512.png')\"",
     "dev": "node watch.mjs"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.268",
+    "@types/chromium": "^0.0.268",
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
   },
