@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "npm run build:chrome && npm run build:firefox",
+    "build": "npm run build:chrome && npm run build:gecko",
     "build:chrome": "vite build --outDir dist/chrome && node -e \"const fs=require('fs');fs.copyFileSync('public/background.js','dist/chrome/background.js');fs.copyFileSync('public/styles.css','dist/chrome/styles.css');fs.copyFileSync('public/popup.html','dist/chrome/popup.html');fs.copyFileSync('public/popup.css','dist/chrome/popup.css');fs.copyFileSync('public/manifest.chrome.json','dist/chrome/manifest.json');fs.mkdirSync('dist/chrome/icons',{recursive:true});fs.copyFileSync('public/icons/icon512.png','dist/chrome/icons/icon512.png')\"",
-    "build:firefox": "vite build --outDir dist/firefox && node -e \"const fs=require('fs');fs.copyFileSync('public/background.js','dist/firefox/background.js');fs.copyFileSync('public/styles.css','dist/firefox/styles.css');fs.copyFileSync('public/popup.html','dist/firefox/popup.html');fs.copyFileSync('public/popup.css','dist/firefox/popup.css');fs.copyFileSync('public/manifest.firefox.json','dist/firefox/manifest.json');fs.mkdirSync('dist/firefox/icons',{recursive:true});fs.copyFileSync('public/icons/icon512.png','dist/firefox/icons/icon512.png')\"",
+    "build:gecko": "vite build --outDir dist/gecko && node -e \"const fs=require('fs');fs.copyFileSync('public/background.js','dist/gecko/background.js');fs.copyFileSync('public/styles.css','dist/gecko/styles.css');fs.copyFileSync('public/popup.html','dist/gecko/popup.html');fs.copyFileSync('public/popup.css','dist/gecko/popup.css');fs.copyFileSync('public/manifest.gecko.json','dist/gecko/manifest.json');fs.mkdirSync('dist/gecko/icons',{recursive:true});fs.copyFileSync('public/icons/icon512.png','dist/gecko/icons/icon512.png')\"",
     "dev": "node watch.mjs"
   },
   "devDependencies": {
