@@ -38,7 +38,7 @@ router.post("/", async (request: Request, response: Response) => {
   const safeAuthor = typeof author === "string" && author ? author : "[deleted]";
 
   try {
-    const backendResponse: SummarizeResponse = await GemeniSummarizer({
+    const backendResponse: SummarizeResponse = await AnthropicSummarizer({
       // Switch between Gemni/Anthropic during development - PreYem
       title,
       body: bodyText,
