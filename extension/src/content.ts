@@ -1,7 +1,7 @@
 // Page where we inject AI Summary button, scrape the post content and send it to the backs
 
 import { fetchSummary } from "./api";
-import { createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./ui";
+import { createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./summaryModal";
 
 // Function to scrab the post for data processing to be sent to the backend - PreYem
 function scrapePost() {

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
-import { summarize } from "../services/ai";
+import { summarize as AnthropicSummarizer } from "../services/anthropic-ai-prompt";
+import { summarize as GemeniSummarizer } from "../services/gemini-ai-prompt";
 import type { SummarizeRequest, SummarizeResponse } from "../types";
 
 const router = Router();
@@ -32,12 +33,13 @@ router.post("/", async (request: Request, response: Response) => {
         .filter(Boolean)
     : [];
 
-  // Fallbacks in case the extension fails to scrape these for some reason
+  // Fallback in case the scraper fails - PreYem
   const safeSubreddit = typeof currentSubreddit === "string" && currentSubreddit ? currentSubreddit : "unknown";
   const safeAuthor = typeof author === "string" && author ? author : "[deleted]";
 
   try {
-    const backendResponse: SummarizeResponse = await summarize({
+    const backendResponse: SummarizeResponse = await GemeniSummarizer({
+      // Switch between Gemni/Anthropic during development - PreYem
       title,
       body: bodyText,
       comments: sanitizedComments,
@@ -45,8 +47,8 @@ router.post("/", async (request: Request, response: Response) => {
       author: safeAuthor,
     });
     response.json(backendResponse);
-  } catch (err) {
-    console.error("[Backend] AI error:", err);
+  } catch (error) {
+    console.error(error);
     response.status(500).json({ error: "Failed to generate summary." });
   }
 });

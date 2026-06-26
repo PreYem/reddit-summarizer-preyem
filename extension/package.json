@@ -11,7 +11,7 @@
     "dev": "node watch.mjs"
   },
   "devDependencies": {
-    "@types/chromium": "^0.0.268",
+    "@types/chrome": "^0.0.268",
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
   },
