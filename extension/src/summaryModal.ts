@@ -56,13 +56,23 @@ export function createButton(): HTMLButtonElement {
 // Updates the button's text and disabled state based on what's happening.
 // Used as a simple state machine: idle → loading → idle (or error → idle)
 export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "error") {
+  // const labels = {
+  //   idle: "AI Summary",
+  //   loading: "⏳ Summarizing...",
+  //   error: "Failed to summarize | Server Issue",
+  // };
+
   const labels = {
     idle: "AI Summary",
-    loading: "⏳ Summarizing...",
-    error: "Failed to summarize | Server Issue",
+    loading: "summarizing",
+    error: "Failed to summarize | Backend server issue, try again later.",
   };
 
-  btn.textContent = labels[state];
+  if (state === "loading") {
+    btn.innerHTML = `<span class="rs-btn-spinner"></span> Summarizing...`;
+  } else {
+    btn.textContent = labels[state] ?? "AI Summary";
+  }
 
   // Disabling button when loading or when an error occurs - PreYem
   btn.disabled = state === "loading" || state === "error";

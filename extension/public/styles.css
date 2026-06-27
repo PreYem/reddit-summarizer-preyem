@@ -235,3 +235,19 @@
   color: #818384;
   border-left: 3px solid #818384;
 }
+
+.rs-btn-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  margin-right : 4px;
+  animation: rs-spin 0.75s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes rs-spin {
+  to { transform: rotate(360deg); }
+}
