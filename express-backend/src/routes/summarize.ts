@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
-import { summarize as AnthropicSummarizer } from "../services/anthropic-ai-prompt";
+import { summarize as AnthropicSummarizer } from "../services/claude-ai-prompt";
 import { summarize as GemeniSummarizer } from "../services/gemini-ai-prompt";
-import { summarize as GroqSummarizer } from "../services/groq-ai-prompt";
+import { summarize as GroqSummarizer } from "../services/groq-meta-ai-prompt";
 
 import type { SummarizeRequest, SummarizeResponse } from "../types";
 
@@ -40,8 +40,8 @@ router.post("/", async (request: Request, response: Response) => {
   const safeAuthor = typeof author === "string" && author ? author : "[deleted]";
 
   try {
-    const backendResponse: SummarizeResponse = await AnthropicSummarizer({
-      // Switch between Gemni/Anthropic during development - PreYem
+    const backendResponse: SummarizeResponse = await GemeniSummarizer({
+      // Switch between different models during development - PreYem
       title,
       body: bodyText,
       comments: sanitizedComments,
@@ -49,7 +49,7 @@ router.post("/", async (request: Request, response: Response) => {
       author: safeAuthor,
     });
     response.json(backendResponse);
-    console.log(backendResponse)
+    console.log(backendResponse);
   } catch (error) {
     console.error(error);
     response.status(500).json({ error: "Failed to generate summary." });

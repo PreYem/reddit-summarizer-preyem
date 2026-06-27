@@ -11,4 +11,6 @@ export interface SummarizeResponse {
   community: string;
   communityReaction: string;
   communityReactionBreakdown: string;
+  subredditDescription: string;
+  aiModel: string;
 }

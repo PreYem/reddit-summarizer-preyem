@@ -1,27 +1,6 @@
 import { createReactionSection } from "./modalReaction";
 import { SummarizeResponse } from "@shared/types";
-/**
- * ui.ts
- *
- * Everything that touches the DOM for our extension's UI:
- *   - The in-memory cache (keyed by URL)
- *   - The "AI Summary" button element
- *   - The modal overlay that shows the summary
- *
- * NOTE: We're building DOM elements manually with document.createElement()
- * instead of using React/Vue/etc. This is intentional — content scripts are
- * guests inside Reddit's page, so we can't use a framework that needs to
- * "own" the DOM from a root element. Vanilla DOM is the right tool here.
- */
 
-// ---------------------------------------------------------------------------
-// TYPES
-// ---------------------------------------------------------------------------
-
-// Defines the shape of a summary response from the backend.
-// This is shared with the backend via the /shared/types file.
-
-// The AI Response type coming from the backend and synced with the frontend - PreYem
 
 // Caching the summary in memory per post, meaning clicking the AI Summary button and closing the modal and opening it again will bring the same response
 // without sending an API request a second time to avoid Token usage ramping up - PreYem
