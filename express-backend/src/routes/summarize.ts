@@ -40,7 +40,7 @@ router.post("/", async (request: Request, response: Response) => {
   const safeAuthor = typeof author === "string" && author ? author : "[deleted]";
 
   try {
-    const backendResponse: SummarizeResponse = await GroqSummarizer({
+    const backendResponse: SummarizeResponse = await AnthropicSummarizer({
       // Switch between Gemni/Anthropic during development - PreYem
       title,
       body: bodyText,
@@ -49,6 +49,7 @@ router.post("/", async (request: Request, response: Response) => {
       author: safeAuthor,
     });
     response.json(backendResponse);
+    console.log(backendResponse)
   } catch (error) {
     console.error(error);
     response.status(500).json({ error: "Failed to generate summary." });
