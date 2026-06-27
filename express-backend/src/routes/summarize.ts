@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
 import { summarize as AnthropicSummarizer } from "../services/anthropic-ai-prompt";
 import { summarize as GemeniSummarizer } from "../services/gemini-ai-prompt";
+import { summarize as GroqSummarizer } from "../services/groq-ai-prompt";
+
 import type { SummarizeRequest, SummarizeResponse } from "../types";
 
 const router = Router();
@@ -38,7 +40,7 @@ router.post("/", async (request: Request, response: Response) => {
   const safeAuthor = typeof author === "string" && author ? author : "[deleted]";
 
   try {
-    const backendResponse: SummarizeResponse = await GemeniSummarizer({
+    const backendResponse: SummarizeResponse = await GroqSummarizer({
       // Switch between Gemni/Anthropic during development - PreYem
       title,
       body: bodyText,
