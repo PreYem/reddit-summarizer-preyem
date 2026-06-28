@@ -1,6 +1,10 @@
 export function buildPrompt(data: { currentSubreddit: string; author: string; title: string; body?: string; comments: string[] }): string {
   const comments = data.comments.slice(0, 100);
 
+  console.log("data.body")
+  console.log(data.body)
+
+
   return `
     You are a strict Reddit post summarizer.
     Return ONLY a valid JSON object.
@@ -36,7 +40,8 @@ export function buildPrompt(data: { currentSubreddit: string; author: string; ti
     - "Most commenters criticize OP's decision and disagree with their reasoning. Based on 21 comments."
     - "subredditDescription" : One setence describing what the subreddit is about.
         Always follow the exact format: " ${data.currentSubreddit} is + <1-2 sentences explaining what the subreddit is about>."
-    - "aiModel" : The AI Model that you are + which version (example :  Anthropic | claude-haiku-4-5 or Gemini | gemini-2.5-flash ...etc ), do not guess, give accurate info or say you don't know what model you are.
+    - "aiModel" : The AI Model that you are + which version (example :  Anthropic | claude-haiku-4-5 or Gemini | gemini-2.5-flash ...etc ), 
+      do not guess, give accurate info or say you don't know what model you are.
 
     Important constraints:
     - Refer to the author as u/${data.author} at the start of the summary and refer to them as OP in future sentences.

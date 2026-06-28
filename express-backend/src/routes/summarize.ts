@@ -40,7 +40,7 @@ router.post("/", async (request: Request, response: Response) => {
   const safeAuthor = typeof author === "string" && author ? author : "[deleted]";
 
   try {
-    const backendResponse: SummarizeResponse = await GemeniSummarizer({
+    const backendResponse: SummarizeResponse = await GroqSummarizer({
       // Switch between different models during development - PreYem
       title,
       body: bodyText,

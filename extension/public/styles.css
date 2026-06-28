@@ -251,3 +251,14 @@
 @keyframes rs-spin {
   to { transform: rotate(360deg); }
 }
+
+.rs-modal-subreddit {
+  color: #ff4500;
+  font-weight: 600;
+}
+
+.rs-modal-subreddit-desc {
+  color: #ffffff;
+  font-weight: 400;
+  font-size: 0.85em;
+}

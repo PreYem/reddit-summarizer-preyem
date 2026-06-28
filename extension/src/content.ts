@@ -18,8 +18,10 @@ function scrapePost() {
   const title = postEl.getAttribute("post-title") ?? "";
 
   // Post body - PreYem
-  const body = postEl.querySelector('[id^="post-rtjson-content"] p, .md p')?.textContent?.trim() ?? "";
-
+  const body = Array.from(postEl.querySelectorAll('[id^="post-rtjson-content"] p, .md p'))
+    .map((p) => p.textContent?.trim() ?? "")
+    .filter(Boolean)
+    .join("\n");
   // OP or Original Poster - PreYem
   const author = postEl.getAttribute("author") ?? "[deleted]";
 
