@@ -25,10 +25,10 @@ function scrapePost() {
   // OP or Original Poster - PreYem
   const author = postEl.getAttribute("author") ?? "[deleted]";
 
-  const topLevelComments = Array.from(document.querySelectorAll('shreddit-comment[depth="0"], shreddit-comment[depth="1"]')).filter((el) => {
-    // Only keep ones whose parent isn't another shreddit-comment (true top-level)
-    return !el.closest("shreddit-comment")?.parentElement?.closest("shreddit-comment");
-  });
+  // const topLevelComments = Array.from(document.querySelectorAll('shreddit-comment[depth="0"], shreddit-comment[depth="1"]')).filter((el) => {
+  //   // Only keep ones whose parent isn't another shreddit-comment (true top-level)
+  //   return !el.closest("shreddit-comment")?.parentElement?.closest("shreddit-comment");
+  // });
 
   const comments = Array.from(document.querySelectorAll("shreddit-comment"))
     .map((commentEl) => {
