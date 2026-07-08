@@ -11,7 +11,9 @@
     "dev": "node watch.mjs"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
     "@types/chrome": "^0.0.268",
+    "tailwindcss": "^4.3.2",
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
   },

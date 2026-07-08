@@ -2,7 +2,7 @@ import { build } from "vite";
 import { copyFileSync, mkdirSync, watch } from "fs";
 
 function copyPublicFiles() {
-  const files = ["background.js", "styles.css", "popup.html", "popup.css"];
+  const files = ["background.js", "popup.html"];
   for (const file of files) {
     copyFileSync(`public/${file}`, `dist/chromium/${file}`);
     copyFileSync(`public/${file}`, `dist/gecko/${file}`);
@@ -29,9 +29,10 @@ const watcher = await build({
 
 watcher.on("event", (event) => {
   if (event.code === "BUNDLE_END") {
-    mkdirSync("dist/gecko", { recursive: true }); // ← add this line
-    mkdirSync("dist/chromium", { recursive: true }); // ← add this line
+    mkdirSync("dist/gecko", { recursive: true });
+    mkdirSync("dist/chromium", { recursive: true });
     copyFileSync("dist/chromium/content.js", "dist/gecko/content.js");
+    copyFileSync("dist/chromium/tailwind.css", "dist/gecko/tailwind.css");
     copyPublicFiles();
     console.log("[watch] both dist/chromium and dist/gecko updated");
   }

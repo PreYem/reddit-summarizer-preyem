@@ -3,49 +3,114 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="popup.css" />
+    <link rel="stylesheet" href="tailwind.css" />
     <title>Reddit Summarizer</title>
   </head>
-  <body>
-    <div class="popup">
-      <div class="popup-header">
-        <h1>Reddit Summarizer</h1>
-        <span class="popup-version">v1.4.0</span>
+  <body class="w-[600px] bg-[#1a1a1b] text-[#d7dadc] font-sans m-0 p-0">
+    <div class="flex flex-col gap-3 p-[18px_16px_14px]">
+      <!-- Header -->
+      <div class="flex items-baseline justify-between">
+        <h1 class="text-[15px] font-bold text-[#ff4500]">Reddit Summarizer</h1>
+        <span class="text-[10px] text-white/20">v1.4.0</span>
       </div>
 
-      <p class="popup-desc">
-        Open any Reddit text post and click <strong>AI Summary</strong> button to get a concise breakdown of the post along with the most relevant
-        insights from the top comments.
+      <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
+        Open any Reddit text post and click
+        <strong class="text-[#ff4500] font-semibold">AI Summary</strong>
+        button to get a concise breakdown of the post along with the most relevant insights from the top comments.
       </p>
 
-      <div class="popup-divider"></div>
-      <div class="popup-limitations">
-        <p class="popup-limitations-title">⚠️ Known Limitations</p>
-        <ul>
-          <li>The AI runs on a free tier — high traffic may cause temporary failures. Try again in a few seconds.</li>
-          <li>
-            The backend is hosted on Render's free tier. If unused for 15-20 min, the first request may fail. It'll recover within 30-60 seconds.
+      <div class="h-px bg-white/[0.07]"></div>
+
+      <!-- Status -->
+      <div class="flex items-center gap-[7px] text-[11.5px] text-[#46d160]">
+        <span class="w-[7px] h-[7px] bg-[#46d160] rounded-full shrink-0"></span>
+        Active on Reddit
+      </div>
+
+      <div class="h-px bg-white/[0.07]"></div>
+
+      <!-- Declared Limitations -->
+      <div class="py-1">
+        <p class="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[#ff4500]">⚠️ Currently Known Limitations</p>
+        <ul class="flex list-disc flex-col gap-1.5 pl-4">
+          <li class="text-xs leading-relaxed text-white/55">
+            The AI runs on a free tier, meaning high traffic may cause temporary failures. Try again in a few seconds.
           </li>
-          <li>Media content (videos, images, GIFs) is excluded from summaries to keep responses fast and reduce AI token usage.</li>
-          <li>
+          <li class="text-xs leading-relaxed text-white/55">
+            The backend is hosted on Render's free tier. If unused for 15-20 min, the first request may fail but should be back online in under 1-2
+            minutes.
+          </li>
+          <li class="text-xs leading-relaxed text-white/55">
+            Media content (videos, images, GIFs) are excluded from summaries to keep responses fast and reduce AI token usage.
+          </li>
+          <li class="text-xs leading-relaxed text-white/55">
             This extension is still in development, if you found a bug, feel free to
-            <a href="https://github.com/PreYem/reddit-summarizer-preyem/issues" target="_blank" rel="noopener">report it on GitHub</a>
+            <a
+              href="https://github.com/PreYem/reddit-summarizer-preyem/issues"
+              class="text-[#ff4500] no-underline hover:underline"
+              target="_blank"
+              rel="noopener"
+              >report it on GitHub.</a
+            >
           </li>
         </ul>
       </div>
-      <div class="popup-divider"></div>
 
-      <div class="popup-status"><span class="dot"></span> Active on Reddit</div>
+      <!-- Donation Link -->
+      <a
+        href="https://paypal.me/preyem"
+        target="_blank"
+        rel="noopener"
+        class="group flex items-center justify-between gap-3 rounded-lg border border-[#3988ff]/40 bg-[#3988ff]/10 px-3 py-3 no-underline transition-colors duration-150 hover:bg-[#3988ff]/[0.16]"
+      >
+        <!-- PayPal icon -->
+        <span class="flex items-center gap-3">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3988ff]/15">
+            <img src="https://cdn.simpleicons.org/paypal/3988ff" width="16" height="16" alt="" />
+          </span>
+          <span class="flex flex-col">
+            <span class="text-[12.5px] font-semibold text-[#d7dadc]">Found this extension helpful?</span>
+            <span class="text-[10.5px] text-white/45">
+              Optional contributions help support future updates and keep the extension available for free.
+            </span>
+          </span>
+        </span>
 
-      <div class="popup-divider"></div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="14"
+          height="14"
+          fill="none"
+          stroke="#3988ff"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="shrink-0 transition-transform duration-150 group-hover:translate-x-0.5"
+        >
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </a>
 
-      <div class="popup-footer">
-        <span class="popup-thanks">Extension made by PreYem</span>
-        <div class="popup-links">
-          <a href="https://preyem.me/" target="_blank" rel="noopener" title="Portfolio">
+      <div class="h-px bg-white/[0.07]"></div>
+
+      <!-- Footer containing socials -->
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] text-white/25">Extension made by PreYem</span>
+        <div class="flex items-center gap-3">
+          <a
+            href="https://preyem.me/"
+            target="_blank"
+            rel="noopener"
+            title="Portfolio"
+            class="flex items-center text-white/25 transition-colors duration-150 hover:text-[#4a9eff]"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
+              width="16"
+              height="16"
               fill="none"
               stroke="currentColor"
               stroke-width="2"
@@ -56,15 +121,27 @@
               <circle cx="12" cy="7" r="4" />
             </svg>
           </a>
-          <a href="https://github.com/PreYem" target="_blank" rel="noopener" title="GitHub">
-            <svg viewBox="0 0 24 24" fill="currentColor">
+          <a
+            href="https://github.com/PreYem"
+            target="_blank"
+            rel="noopener"
+            title="GitHub"
+            class="flex items-center text-white/25 transition-colors duration-150 hover:text-[#e6edf3]"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path
                 d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
               />
             </svg>
           </a>
-          <a href="https://gitlab.com/PreYem" target="_blank" rel="noopener" title="GitLab">
-            <svg viewBox="0 0 24 24" fill="currentColor">
+          <a
+            href="https://gitlab.com/PreYem"
+            target="_blank"
+            rel="noopener"
+            title="GitLab"
+            class="flex items-center text-white/25 transition-colors duration-150 hover:text-[#ff4500]"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path
                 d="M22.346 14.817 21.06 10.96l-2.532-7.797a.53.53 0 0 0-1.008 0L15 10.96H9L6.48 3.163a.53.53 0 0 0-1.008 0L2.94 10.96 1.654 14.817a1.056 1.056 0 0 0 .383 1.18L12 23l9.963-7.003a1.056 1.056 0 0 0 .383-1.18z"
               />
