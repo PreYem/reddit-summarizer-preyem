@@ -2,7 +2,7 @@ import { build } from "vite";
 import { copyFileSync, mkdirSync, watch } from "fs";
 
 function copyPublicFiles() {
-  const files = ["background.js", "popup.html"];
+  const files = ["background.js", "popup.html", "styles.css", "popup.css"];
   for (const file of files) {
     copyFileSync(`public/${file}`, `dist/chromium/${file}`);
     copyFileSync(`public/${file}`, `dist/gecko/${file}`);
@@ -19,7 +19,6 @@ function copyPublicFiles() {
 
   console.log("[watch] public files copied");
 }
-
 const watcher = await build({
   build: {
     watch: {},
