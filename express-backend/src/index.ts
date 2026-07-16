@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import summarizeRouter from "./routes/summarize";
+import rateLimit from "express-rate-limit";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,6 +11,15 @@ const PORT = process.env.PORT || 3000;
 // Its purpose is to reduce requests sources outside the extension itself, aka tools like postman.
 // It's not a full proof method since it's baked into the frontend but helps with security to a minor extent - PreYem
 
+// Rate limiing per API request - PreYem
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // Thresh hold on timer
+  max: 5, // Amount of requests per user per timer above
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { backendError: "Too many requests, please slow down." },
+});
+
 const extensionFrontendKey = "reddit-summary-yem0417";
 
 app.use(cors());
@@ -17,6 +27,7 @@ app.use(express.json());
 
 app.use(
   "/summarize",
+  limiter,
   (request, response, next) => {
     const key = request.headers["extension-frontend-key"];
 
