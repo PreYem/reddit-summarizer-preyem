@@ -19,12 +19,29 @@ function getClientIp(request: express.Request): string {
   return request.ip ?? "unknown";
 }
 
+const attemptLog = new Map<string, { count: number; resetAt: number }>();
+
+function logAttempts(clientIp: string) {
+  const now = Date.now();
+  const entry = attemptLog.get(clientIp);
+
+  if (!entry || now > entry.resetAt) {
+    attemptLog.set(clientIp, { count: 1, resetAt: now + WINDOW_MS });
+    console.log(`Attempts left for ${clientIp}: ${MAX_REQUESTS - 1}/${MAX_REQUESTS}`);
+    return;
+  }
+
+  entry.count++;
+  const remaining = Math.max(MAX_REQUESTS - entry.count, 0);
+  console.log(`Attempts left for ${clientIp}: ${remaining}/${MAX_REQUESTS}`);
+}
+
 const limiter = rateLimit({
   windowMs: WINDOW_MS,
   max: MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getClientIp, 
+  keyGenerator: getClientIp,
   message: { backendError: "Too many requests, please slow down." },
 });
 
@@ -33,18 +50,10 @@ const extensionFrontendKey = "reddit-summary-yem0417";
 app.use(cors());
 app.use(express.json());
 
-app.use("/summarize", async (request, response, next) => {
+app.use("/summarize", (request, response, next) => {
   const clientIp = getClientIp(request);
   console.log("Client IP:", clientIp);
-
-  const store = (limiter as any).store;
-  if (store) {
-    const record = await store.get(clientIp);
-    const used = record?.totalHits ?? 0;
-    const remaining = Math.max(MAX_REQUESTS - used, 0);
-    console.log(`Attempts left for ${clientIp}: ${remaining}/${MAX_REQUESTS}`);
-  }
-
+  logAttempts(clientIp);
   next();
 });
 
@@ -53,11 +62,9 @@ app.use(
   limiter,
   (request, response, next) => {
     const key = request.headers["extension-frontend-key"];
-
     if (key !== extensionFrontendKey) {
       return response.status(403).json({ error: "Something went wrong" });
     }
-
     next();
   },
   summarizeRouter,
