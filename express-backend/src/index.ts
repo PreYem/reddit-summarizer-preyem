@@ -5,6 +5,7 @@ import summarizeRouter from "./routes/summarize";
 import rateLimit from "express-rate-limit";
 
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
 // Static string sent by the extension with every request
@@ -25,22 +26,28 @@ const extensionFrontendKey = "reddit-summary-yem0417";
 app.use(cors());
 app.use(express.json());
 
-app.use(
-  "/summarize",
-  limiter,
-  (request, response, next) => {
-    const key = request.headers["extension-frontend-key"];
+app.use("/summarize", (request, response, next) => {
+  console.log("IP seen by Express:", request.ip);
+  console.log("X-Forwarded-For:", request.headers["x-forwarded-for"]);
+  next();
+});
 
-    if (key !== extensionFrontendKey) {
-      console.log(extensionFrontendKey);
-      console.log(key);
-      return response.status(403).json({ error: "Something went wrong" });
-    }
+// app.use(
+//   "/summarize",
+//   limiter,
+//   (request, response, next) => {
+//     const key = request.headers["extension-frontend-key"];
 
-    next();
-  },
-  summarizeRouter,
-);
+//     if (key !== extensionFrontendKey) {
+//       console.log(extensionFrontendKey);
+//       console.log(key);
+//       return response.status(403).json({ error: "Something went wrong" });
+//     }
+
+//     next();
+//   },
+//   summarizeRouter,
+// );
 
 app.get("/", (request, response) => {
   response.status(200).json({
