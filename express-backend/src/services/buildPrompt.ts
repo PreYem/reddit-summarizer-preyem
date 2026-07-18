@@ -16,7 +16,6 @@ export function buildPrompt(data: { currentSubreddit: string; author: string; ti
       "communityReaction": string,
       "communityReactionBreakdown": string
       "subredditDescription": string
-      "aiModel" : string
     }
     Rules:
     - "post": Every 10 lines of text needs to be reduced to 2-3 lines summarizing ONLY what OP said. Do not add opinions or external info. Include critical details.
@@ -40,8 +39,6 @@ export function buildPrompt(data: { currentSubreddit: string; author: string; ti
     - "Most commenters criticize OP's decision and disagree with their reasoning. Based on 21 comments."
     - "subredditDescription" : One setence describing what the subreddit is about.
         Always follow the exact format: " ${data.currentSubreddit} is + <1-2 sentences explaining what the subreddit is about>."
-    - "aiModel" : The AI Model that you are + which version (example :  Anthropic | claude-haiku-4-5 or Gemini | gemini-2.5-flash ...etc ), 
-      do not guess, give accurate info or say you don't know what model you are.
 
     Important constraints:
     - Refer to the author as u/${data.author} at the start of the summary and refer to them as OP in future sentences.
