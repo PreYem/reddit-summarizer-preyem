@@ -42,7 +42,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getClientIp,
-  message: { backendError: "Too many requests, please slow down." },
+  message: { serverError: "Too many requests, please slow down." },
 });
 
 const extensionFrontendKey = "reddit-summary-yem0417";
@@ -63,7 +63,7 @@ app.use(
   (request, response, next) => {
     const key = request.headers["extension-frontend-key"];
     if (key !== extensionFrontendKey) {
-      return response.status(403).json({ error: "Something went wrong" });
+      return response.status(403).json({ serverError: "Something went wrong" });
     }
     next();
   },
