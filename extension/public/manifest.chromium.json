@@ -6,13 +6,13 @@
   "permissions": ["activeTab"],
   "host_permissions": ["https://www.reddit.com/*", "http://localhost:5173/*"],
   "icons": {
-    "512": "icons/icon512.png"
+    "512": "icons/icon-512.png"
   },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Reddit Summarizer by PreYem",
     "default_icon": {
-      "512": "icons/icon512.png"
+      "512": "icons/icon-512.png"
     }
   },
   "background": {
