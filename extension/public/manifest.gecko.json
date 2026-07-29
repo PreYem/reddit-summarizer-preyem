@@ -4,7 +4,7 @@
   "version": "1.4.1",
   "description": "Summarize Reddit posts with AI",
   "permissions": ["activeTab"],
-  "host_permissions": ["https://www.reddit.com/*", "http://localhost:5173/*"],
+  "host_permissions": ["https://www.reddit.com/*"],
   "browser_specific_settings": {
     "gecko": {
       "id": "reddit-summarizer-preyem@preyem.me",
