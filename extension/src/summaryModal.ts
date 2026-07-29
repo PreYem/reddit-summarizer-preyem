@@ -77,12 +77,22 @@ function buildHighlighted(container: HTMLElement, text: string, needle: string, 
 }
 
 // Builds text with every occurrence of the OP's handle wrapped in <strong>, safely.
+// Builds text with every occurrence of the OP's handle wrapped in <strong>, safely — no innerHTML involved.
 function buildBoldOpHandle(container: HTMLElement, text: string, author: string) {
   if (!author || author === "[deleted]") {
     container.appendChild(document.createTextNode(text));
     return;
   }
-  buildHighlighted(container, text, "u/" + author, "rs-op-handle");
+  const handle = "u/" + author;
+  const parts = text.split(handle);
+  parts.forEach((part, i) => {
+    if (part) container.appendChild(document.createTextNode(part));
+    if (i < parts.length - 1) {
+      const strong = document.createElement("strong");
+      strong.textContent = handle;
+      container.appendChild(strong);
+    }
+  });
 }
 
 // Summary Modal - PreYem
