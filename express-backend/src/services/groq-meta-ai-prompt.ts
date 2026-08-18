@@ -5,7 +5,7 @@ import type { SummarizeRequest, SummarizeResponse } from "../types";
 const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function summarize(data: SummarizeRequest): Promise<SummarizeResponse> {
-  const aiModel = "llama-3.3-70b-versatile";
+  const aiModel = "openai/gpt-oss-20b";
   const result = await client.chat.completions.create({
     model: aiModel,
     max_tokens: 2000,
