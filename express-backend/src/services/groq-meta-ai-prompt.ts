@@ -20,6 +20,6 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
 
   console.log("RAW RESPONSE:", raw);
   const parsed = JSON.parse(raw);
-  parsed.aiModel = "Meta | " + aiModel;
+  parsed.aiModel = "OpenAI | " + aiModel;
   return parsed;
 }
