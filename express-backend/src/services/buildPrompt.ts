@@ -1,8 +1,8 @@
 export function buildPrompt(data: { currentSubreddit: string; author: string; title: string; body?: string; comments: string[] }): string {
   const comments = data.comments.slice(0, 100);
 
-  console.log("data.body")
-  console.log(data.body)
+  // console.log("data.body")
+  // console.log(data.body)
 
 
   return `
@@ -38,7 +38,7 @@ export function buildPrompt(data: { currentSubreddit: string; author: string; ti
     - "Commenters are sharply divided, with roughly equal amounts of support and criticism. Based on 30 comments."
     - "Most commenters criticize OP's decision and disagree with their reasoning. Based on 21 comments."
     - "subredditDescription" : One setence describing what the subreddit is about.
-        Always follow the exact format: " ${data.currentSubreddit} is + <1-2 sentences explaining what the subreddit is about>."
+        Always follow the exact format: " ${data.currentSubreddit} is <1-2 sentences explaining what the subreddit is about>."
 
     Important constraints:
     - Refer to the author as u/${data.author} at the start of the summary and refer to them as OP in future sentences.
