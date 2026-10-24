@@ -34,13 +34,15 @@ cd reddit-summarizer-preyem
 
 ### 2. Install dependencies
 
-From the root of the project (installs all workspaces):
+From the root of the project, run `npm install` once — it installs dependencies for both workspaces (the extension and the backend):
 
 ```bash
 npm install
 ```
 
 ### 3. Configure the backend
+
+On first run, copy `.env.example` to a new `.env` file and fill it with your own values:
 
 ```bash
 cd express-backend
