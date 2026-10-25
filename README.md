@@ -56,9 +56,14 @@ GROQ_API_KEY=your_key_here
 GEMINI_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
 PORT=3000
+EXTENSION_KEY=your_shared_key_here
+DEBUG_MODE=false
 ```
 
 Providers are tried in order (Groq → Gemini → Anthropic), so you only need the key for the provider you actually want to rely on.
+
+`EXTENSION_KEY` is a shared secret the backend checks before rate limiting and logging; the extension must send the same value.
+Set `DEBUG_MODE=true` to return a static response with a delay, avoiding AI token usage while testing frontend features.
 
 ### 4. Run the backend
 
@@ -110,3 +115,4 @@ npm run dev:all
 
 - Make sure the backend is running before using the extension
 - The extension reads the current Reddit tab — navigate to any Reddit post and click the injected AI Summary button to summarize it
+- Requests are rate limited per IP, with a server-wide daily cap that resets on UTC-day boundaries; quotas are skipped only in local debug mode

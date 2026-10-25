@@ -34,6 +34,8 @@ The scraped post/comment content is sent to our backend server, which forwards i
 - **Google Gemini** — `gemini-2.5-flash`
 - **Anthropic Claude** — `claude-haiku-4-5`
 
+Keep in mind that these models are subject to change
+
 Only the content needed for the summary you requested is sent to the provider handling that request. No other third parties receive this data.
 
 ## Data retention
