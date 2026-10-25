@@ -6,6 +6,22 @@ import type { SummarizeRequest, SummarizeResponse } from "../types";
 
 const router = Router();
 
+function debugModeEnabled(): boolean {
+  return process.env.DEBUG_MODE === "true";
+}
+
+// Static canned response so local testing doesn't burn API tokens - PreYem
+function debugResponse(payload: SummarizeRequest): SummarizeResponse {
+  return {
+    aiModel: "debug-static",
+    subredditDescription: `r/${payload.currentSubreddit} is a test subreddit used in debug mode.`,
+    post: `[DEBUG] ${payload.title} — static placeholder body for ${payload.author}.`,
+    community: "[DEBUG] Static community summary: top comments would normally be summarized here.",
+    communityReaction: "Mixed",
+    communityReactionBreakdown: "[DEBUG] Static breakdown text for the reaction section.",
+  };
+}
+
 const MAX_BODY_LENGTH = 8_000;
 const MAX_COMMENT_LENGTH = 500;
 const MAX_COMMENTS = 100;
@@ -51,6 +67,13 @@ router.post("/", async (request: Request, response: Response) => {
     currentSubreddit: safeSubreddit,
     author: safeAuthor,
   };
+
+  if (debugModeEnabled()) {
+    console.log("[Backend] Debug mode: simulating 2s AI latency, returning static response, no API calls");
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    response.json(debugResponse(payload));
+    return;
+  }
 
   const errors: { provider: string; message: string }[] = [];
 
