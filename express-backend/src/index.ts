@@ -2,10 +2,16 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import summarizeRouter, { debugModeEnabled } from "./routes/summarize";
-import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import rateLimit from "express-rate-limit";
 
 const app = express();
-app.set("trust proxy", true);
+
+// Trust exactly ONE proxy hop (Render's). Never use `true`: it lets clients
+// forge their IP through the X-Forwarded-For header. Verify with:
+//   curl -H "X-Forwarded-For: 1.2.3.4" ...  -> logged req.ip must NOT be 1.2.3.4
+// If req.ip shows an internal/proxy address instead, change this to 2.
+app.set("trust proxy", 1);
+
 const PORT = process.env.PORT || 3000;
 
 const MAX_REQUESTS = 5;
@@ -17,37 +23,17 @@ const MAX_DAILY_REAL_REQUESTS = 50;
 // Hard daily cap for the whole server, independent of client IP - PreYem
 const MAX_SERVER_DAILY_REAL_REQUESTS = 100;
 
-function getClientIp(request: express.Request): string {
-  const xff = request.headers["x-forwarded-for"];
-  if (typeof xff === "string" && xff.length > 0) {
-    return ipKeyGenerator(xff.split(",")[0].trim());
-  }
-  return ipKeyGenerator(request.ip ?? "unknown");
-}
+// Set EXTENSION_KEY in Render's environment variables and use the same value
+// in the extension's build. No hardcoded fallback: if unset, everything is 403.
+const extensionFrontendKey = process.env.EXTENSION_KEY ?? "";
 
-const attemptLog = new Map<string, { count: number; resetAt: number }>();
-
-function logAttempts(clientIp: string) {
-  const now = Date.now();
-  const entry = attemptLog.get(clientIp);
-
-  if (!entry || now > entry.resetAt) {
-    attemptLog.set(clientIp, { count: 1, resetAt: now + WINDOW_MS });
-    console.log(`Attempts left for ${clientIp}: ${MAX_REQUESTS - 1}/${MAX_REQUESTS}`);
-    return;
-  }
-
-  entry.count++;
-  const remaining = Math.max(MAX_REQUESTS - entry.count, 0);
-  console.log(`Attempts left for ${clientIp}: ${remaining}/${MAX_REQUESTS}`);
-}
-
+// Per-IP limit. No custom keyGenerator: the default uses req.ip, which Express
+// derives safely from the connection + the single trusted proxy hop.
 const limiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: MAX_REQUESTS,
+  limit: MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getClientIp,
   message: { serverError: "Too many requests, please slow down." },
 });
 
@@ -79,28 +65,27 @@ setInterval(() => {
   }
 }, 60 * 1000).unref();
 
-const extensionFrontendKey = "reddit-summary-yem0417";
-
 app.use(cors());
-app.use(express.json());
-
-app.use("/summarize", (request, response, next) => {
-  const clientIp = getClientIp(request);
-  console.log("Client IP:", clientIp);
-  logAttempts(clientIp);
-  next();
-});
+app.use(express.json({ limit: "200kb" }));
 
 app.use(
   "/summarize",
-  limiter,
+  // 1. Check the key FIRST: bad requests are rejected before anything is
+  //    logged, counted, or stored, so spam can't grow memory or flood logs.
   (request, response, next) => {
     const key = request.headers["extension-frontend-key"];
-    if (key !== extensionFrontendKey) {
+    if (!extensionFrontendKey || key !== extensionFrontendKey) {
       return response.status(403).json({ serverError: "Something went wrong" });
     }
-    if (!debugModeEnabled() && overDailyQuota(getClientIp(request))) {
-      console.warn(`[Backend] Daily quota exceeded for ${getClientIp(request)}`);
+    next();
+  },
+  // 2. Per-IP rate limit (real IP via req.ip).
+  limiter,
+  // 3. Daily quotas (per-IP and server-wide), skipped only in local debug mode.
+  (request, response, next) => {
+    const clientIp = request.ip ?? "unknown";
+    if (!debugModeEnabled() && overDailyQuota(clientIp)) {
+      console.warn(`[Backend] Daily quota exceeded for ${clientIp}`);
       return response.status(429).json({ serverError: "Daily limit reached, try again tomorrow." });
     }
     next();

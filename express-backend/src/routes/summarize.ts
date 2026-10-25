@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { summarize as AnthropicSummarizer } from "../services/claude-ai-prompt";
 import { summarize as GeminiSummarizer } from "../services/gemini-ai-prompt";
-import { summarize as GroqSummarizer } from "../services/groq-meta-ai-prompt";
+import { summarize as GroqSummarizer } from "../services/groq-ai-prompt";
 import type { SummarizeRequest, SummarizeResponse } from "../types";
 
 const router = Router();
