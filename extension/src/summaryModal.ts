@@ -221,7 +221,9 @@ export function showModal(summary: SummarizeResponse, author: string) {
   };
   document.addEventListener("keydown", onKeyDown);
 
-  requestAnimationFrame(() => overlay.classList.add("rs-modal-visible"));
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => overlay.classList.add("rs-modal-visible"));
+  });
 }
 
 function closeModal() {

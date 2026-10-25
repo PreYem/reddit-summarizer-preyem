@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Reddit Summarizer",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "Summarize Reddit posts with AI",
   "permissions": ["activeTab"],
   "host_permissions": ["https://www.reddit.com/*"],

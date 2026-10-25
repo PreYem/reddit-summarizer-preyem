@@ -34,7 +34,7 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.5s ease;
 }
 
 .rs-modal-backgroundOverlay.rs-modal-visible {
@@ -51,8 +51,8 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-  transform: translateY(12px);
-  transition: transform 0.2s ease;
+  transform: translateY(24px);
+  transition: transform 0.5s ease;
   overflow: visible;
 }
 
