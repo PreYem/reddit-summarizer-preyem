@@ -100,5 +100,5 @@ app.get("/", (request, response) => {
 });
 
 app.listen(PORT, () => {
-  console.log("Express server running on http://localhost:" + PORT);
+  console.log("Express server running on http://localhost:" + PORT || 3000);
 });

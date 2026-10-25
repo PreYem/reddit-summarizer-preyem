@@ -32,24 +32,26 @@ git clone https://github.com/PreYem/reddit-summarizer-preyem.git
 cd reddit-summarizer-preyem
 ```
 
-### 2. Install dependencies
+### 2. Run the install script
 
-From the root of the project, run `npm install` once — it installs dependencies for both workspaces (the extension and the backend):
+Run the one-time setup script from the project root — it installs dependencies for both workspaces, creates `express-backend/.env` from `.env.example`, and builds the extension for both browsers:
+
+**Windows:** double-click `windows_install_project.bat` or run it in a terminal:
+
+```bat
+windows_install_project.bat
+```
+
+**Linux:** make it executable once, then run it:
 
 ```bash
-npm install
+chmod +x linux_install_project.sh
+./linux_install_project.sh
 ```
 
 ### 3. Configure the backend
 
-On first run, copy `.env.example` to a new `.env` file and fill it with your own values:
-
-```bash
-cd express-backend
-cp .env.example .env
-```
-
-Open `.env` and add the API key(s) for the provider(s) you want to use:
+Open `express-backend/.env` (created by the install script) and fill it with your own values:
 
 ```
 GROQ_API_KEY=your_key_here
@@ -65,29 +67,15 @@ Providers are tried in order (Groq → Gemini → Anthropic), so you only need t
 `EXTENSION_KEY` is a shared secret the backend checks before rate limiting and logging; the extension must send the same value.
 Set `DEBUG_MODE=true` to return a static response with a delay, avoiding AI token usage while testing frontend features.
 
-### 4. Run the backend
+### 4. Build the extension
+
+The install script already built both targets. To rebuild after code changes, from the `extension` directory:
 
 ```bash
-# From the express-backend directory
-npm run dev
+npm run build        # both Chromium and Gecko builds
 ```
 
-The backend will start on `http://localhost:3000`.
-
-### 5. Build the extension
-
-```bash
-# From the extension directory
-cd ../extension
-
-# Build for Chromium (Chrome, Edge, Brave)
-npm run build:chromium
-
-# Build for Firefox
-npm run build:gecko
-```
-
-### 6. Load the extension in your browser
+### 5. Load the extension in your browser
  
 **Chromium:**
 1. Go to `chrome://extensions`
@@ -101,13 +89,24 @@ npm run build:gecko
 3. Select any file inside `extension/dist/gecko`
 
 
-### 7. Run both backend and extension dev server together
+### 6. Run both backend and extension dev server together
 
-From the project root:
+Run the start script from the project root:
+
+**Windows:** double-click `windows_start_dev_server.bat` or run it in a terminal:
+
+```bat
+windows_start_dev_server.bat
+```
+
+**Linux:**
 
 ```bash
-npm run dev:all
+chmod +x linux_start_dev_server.sh
+./linux_start_dev_server.sh
 ```
+
+The backend starts on `http://localhost:3000` and the extension dev server watches for changes.
 
 ---
 
