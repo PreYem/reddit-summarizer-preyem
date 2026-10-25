@@ -6,7 +6,7 @@ import type { SummarizeRequest, SummarizeResponse } from "../types";
 
 const router = Router();
 
-function debugModeEnabled(): boolean {
+export function debugModeEnabled(): boolean {
   return process.env.DEBUG_MODE === "true";
 }
 
