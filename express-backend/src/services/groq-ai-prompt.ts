@@ -18,7 +18,6 @@ export async function summarize(data: SummarizeRequest): Promise<SummarizeRespon
     .replace(/```\n?/g, "")
     .trim();
 
-  console.log("RAW RESPONSE:", raw);
   const parsed = JSON.parse(raw);
   parsed.aiModel = "OpenAI | " + aiModel;
   return parsed;

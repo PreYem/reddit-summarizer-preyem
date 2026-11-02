@@ -37,7 +37,7 @@ type SummarizerFn = (input: {
 // Order = priority. First one wins if it succeeds - PreYem
 const PROVIDERS: { name: string; fn: SummarizerFn }[] = [
   { name: "groq", fn: GroqSummarizer },
-  { name: "gemini", fn: GeminiSummarizer },
+  { name: "google", fn: GeminiSummarizer },
   { name: "anthropic", fn: AnthropicSummarizer },
 ];
 
@@ -68,6 +68,12 @@ router.post("/", async (request: Request, response: Response) => {
     author: safeAuthor,
   };
 
+  console.log("Post to Summarize :");
+  console.log(JSON.stringify(payload, null, 2));
+  console.log(payload.body.length);
+  console.log("Post Body word count:", payload.body.trim().split(/\s+/).length);
+
+  // Simulating debug mode by adding a 2 second delay to the server response - PreYem
   if (debugModeEnabled()) {
     console.log("[Backend] Debug mode: simulating 2s AI latency, returning static response, no API calls");
     await new Promise((resolve) => setTimeout(resolve, 2000));
