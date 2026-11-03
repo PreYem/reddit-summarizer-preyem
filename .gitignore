@@ -1,9 +1,11 @@
 /node_modules
 /express-backend/.env
 /extension/dist
-/extention/.env
+/extension/.env
 /express-backend/dist
 extension/.env
 express-backend/node_modules
 extension-react/dist
 extension-react/node_modules
+/express-backend/data/
+/.kilo/plans/

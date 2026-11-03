@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Request Log Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/summary-logs/style.css" />
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-200 font-sans">
+    <header class="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-800">
+      <h1 class="text-lg font-semibold">Reddit Summarizer — Request Logs Dashboard</h1>
+      <div class="flex items-center gap-2">
+        <button
+          id="refreshBtn"
+          class="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm font-medium cursor-pointer transition hover:brightness-110"
+        >
+          Refresh
+        </button>
+        <button id="clearBtn" class="bg-red-600 text-white rounded-lg px-4 py-2 text-sm font-medium cursor-pointer transition hover:brightness-110">
+          Clear logs
+        </button>
+      </div>
+    </header>
+
+    <main class="p-6 max-w-7xl mx-auto">
+      <div id="kpis" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6"></div>
+
+      <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6">
+        <h2 class="text-sm font-semibold text-slate-400 mb-3">Top browsers</h2>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-slate-500">
+              <th class="text-left py-1.5 border-b border-slate-800">Client browser</th>
+              <th class="text-left py-1.5 border-b border-slate-800">Requests</th>
+            </tr>
+          </thead>
+          <tbody id="browserTable"></tbody>
+        </table>
+      </section>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:col-span-2">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-slate-400">Usage — <span id="rangeLabel">last 24h</span> (UTC)</h2>
+            <div class="flex gap-1" id="rangeButtons">
+              <button
+                data-range="24h"
+                class="range-btn active px-3 py-1 text-xs rounded-md border border-slate-700 bg-slate-800 cursor-pointer transition hover:bg-slate-700"
+              >
+                Last 24h
+              </button>
+              <button
+                data-range="7d"
+                class="range-btn px-3 py-1 text-xs rounded-md border border-slate-700 bg-slate-800 cursor-pointer transition hover:bg-slate-700"
+              >
+                7 days
+              </button>
+              <button
+                data-range="30d"
+                class="range-btn px-3 py-1 text-xs rounded-md border border-slate-700 bg-slate-800 cursor-pointer transition hover:bg-slate-700"
+              >
+                30 days
+              </button>
+              <button
+                data-range="90d"
+                class="range-btn px-3 py-1 text-xs rounded-md border border-slate-700 bg-slate-800 cursor-pointer transition hover:bg-slate-700"
+              >
+                90 days
+              </button>
+            </div>
+          </div>
+          <canvas id="usageChart"></canvas>
+        </section>
+
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <h2 class="text-sm font-semibold text-slate-400 mb-1">Status mix</h2>
+          <p class="text-xs text-slate-500 mb-3">
+            Response status codes per request: 200 = success, 403 = key rejected, 429 = rate limited, 500 = provider failure.
+          </p>
+          <canvas id="statusChart"></canvas>
+          <ul id="statusValues" class="mt-3 text-sm space-y-1"></ul>
+        </section>
+
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <h2 class="text-sm font-semibold text-slate-400 mb-1">Provider split</h2>
+          <p class="text-xs text-slate-500 mb-3">Which AI provider served each request (groq / google / anthropic, or none when no provider ran).</p>
+          <canvas id="providerChart"></canvas>
+          <ul id="providerValues" class="mt-3 text-sm space-y-1"></ul>
+        </section>
+
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <h2 class="text-sm font-semibold text-slate-400 mb-3">Top subreddits</h2>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-slate-500">
+                <th class="text-left py-1.5 border-b border-slate-800">Subreddit</th>
+                <th class="text-left py-1.5 border-b border-slate-800">Requests</th>
+              </tr>
+            </thead>
+            <tbody id="subTable"></tbody>
+          </table>
+        </section>
+
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <h2 class="text-sm font-semibold text-slate-400 mb-3">Top IPs</h2>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-slate-500">
+                <th class="text-left py-1.5 border-b border-slate-800">IP</th>
+                <th class="text-left py-1.5 border-b border-slate-800">Requests</th>
+              </tr>
+            </thead>
+            <tbody id="ipTable"></tbody>
+          </table>
+        </section>
+
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:col-span-2">
+          <h2 class="text-sm font-semibold text-slate-400 mb-3" id="logHeading">Latest requests</h2>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-slate-500">
+                <th class="text-left py-1.5 border-b border-slate-800">#</th>
+                <th class="text-left py-1.5 border-b border-slate-800"><button type="button" class="sort-btn" data-sort="timestamp">Time</button></th>
+                <th class="text-left py-1.5 border-b border-slate-800"><button type="button" class="sort-btn" data-sort="status">Status</button></th>
+                <th class="text-left py-1.5 border-b border-slate-800">
+                  <button type="button" class="sort-btn" data-sort="provider">Provider</button>
+                </th>
+                <th class="text-left py-1.5 border-b border-slate-800">
+                  <button type="button" class="sort-btn" data-sort="wordCount">Word Count</button>
+                </th>
+                <th class="text-left py-1.5 border-b border-slate-800">
+                  <button type="button" class="sort-btn" data-sort="subreddit">Subreddit</button>
+                </th>
+                <th class="text-left py-1.5 border-b border-slate-800"><button type="button" class="sort-btn" data-sort="title">Title</button></th>
+              </tr>
+            </thead>
+            <tbody id="logTable"></tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+
+    <script src="/summary-logs/script.js"></script>
+  </body>
+</html>

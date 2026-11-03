@@ -1,0 +1,24 @@
+/* Minimal custom rules on top of Tailwind - PreYem */
+.range-btn.active {
+  background: #4f8cff;
+  border-color: #4f8cff;
+  color: #fff;
+}
+canvas {
+  max-height: 300px;
+}
+.sort-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.sort-btn:hover {
+  color: #cbd5e1;
+}
+th.sorted .sort-btn {
+  color: #4f8cff;
+  font-weight: 600;
+}

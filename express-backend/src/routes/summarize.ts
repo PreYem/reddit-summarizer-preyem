@@ -3,6 +3,7 @@ import { summarize as AnthropicSummarizer } from "../services/claude-ai-prompt";
 import { summarize as GeminiSummarizer } from "../services/gemini-ai-prompt";
 import { summarize as GroqSummarizer } from "../services/groq-ai-prompt";
 import type { SummarizeRequest, SummarizeResponse } from "../types";
+import { setProvider } from "../services/requestLog";
 
 const router = Router();
 
@@ -77,6 +78,7 @@ router.post("/", async (request: Request, response: Response) => {
   if (debugModeEnabled()) {
     console.log("[Backend] Debug mode: simulating 2s AI latency, returning static response, no API calls");
     await new Promise((resolve) => setTimeout(resolve, 2000));
+    setProvider(request, "debug-static");
     response.json(debugResponse(payload));
     return;
   }
@@ -87,6 +89,7 @@ router.post("/", async (request: Request, response: Response) => {
     try {
       const backendResponse = await provider.fn(payload);
       console.log(`[Backend] Summary generated via ${provider.name}`);
+      setProvider(request, provider.name);
       response.json(backendResponse);
       return;
     } catch (error) {

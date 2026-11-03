@@ -8,6 +8,7 @@ A browser extension that summarizes Reddit posts and their comment sections usin
 - Summarizes the top comments and community discussion
 - Labels the community reaction (Positive, Negative, Mixed, etc.)
 - Works on both Chromium-based (Chrome, Edge, Brave...etc) and Gecko-based browsers (Firefox, Waterfox, Librewolf...etc) and Firefox
+- Logs every request attempt (up to the latest 500) to `express-backend/data/request-log.json`, including requester IP, user agent, status, provider, post info, and full post word count — with a built-in stats dashboard (see below)
 
 ## Tech stack
 
@@ -59,12 +60,14 @@ GEMINI_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
 PORT=3000
 EXTENSION_KEY=your_shared_key_here
+LOG_VIEW_KEY=your_stats_dashboard_key_here
 DEBUG_MODE=false
 ```
 
 Providers are tried in order (Groq → Gemini → Anthropic), so you only need the key for the provider you actually want to rely on.
 
 `EXTENSION_KEY` is a shared secret the backend checks before rate limiting and logging; the extension must send the same value.
+`LOG_VIEW_KEY` protects the request-log endpoints (`/latest-requests`, `/summary-logs`, `/summary-logs/data`).
 Set `DEBUG_MODE=true` to return a static response with a delay, avoiding AI token usage while testing frontend features.
 
 ### 4. Build the extension
@@ -110,8 +113,29 @@ The backend starts on `http://localhost:3000` and the extension dev server watch
 
 ---
 
+## Request log & stats dashboard
+
+Every request to `/summarize` is logged (up to the latest 500 entries, so a full 90-day window survives restarts) to `express-backend/data/request-log.json`: timestamp, IP, user agent, status, provider, and post info (title, body preview, full word count, subreddit, author).
+
+While the backend is running, open the dashboard in a browser:
+
+```
+http://localhost:3000/summary-logs?key=<LOG_VIEW_KEY>
+```
+
+It shows KPIs (entries, total/avg/max words, first/last entry), daily usage chart with 7d/30d/90d ranges, status mix, provider split, hourly distribution, top subreddits/authors/IPs/user agents, and the latest requests table — with a manual Refresh button. The key is read from `?key=` on first load, kept in `sessionStorage`, and sent as a `?key=` query param on every fetch (no header needed).
+
+Raw data endpoints (same key, via `?key=` param or `log-view-key` header):
+
+- `GET /summary-logs/data` — aggregated stats JSON
+- `GET /latest-requests` — raw JSON entries
+- `DELETE /summary-logs` — clears the log file back to an empty array (daily quota counters are kept)
+
+---
+
 ## Notes
 
 - Make sure the backend is running before using the extension
 - The extension reads the current Reddit tab — navigate to any Reddit post and click the injected AI Summary button to summarize it
 - Requests are rate limited per IP, with a server-wide daily cap that resets on UTC-day boundaries; quotas are skipped only in local debug mode
+- Daily quota counters live in `request-log.json` (`dailyCounters`) so they survive restarts/deploys; clearing the log via `DELETE /summary-logs` does not reset them
