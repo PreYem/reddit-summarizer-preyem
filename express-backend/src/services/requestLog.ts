@@ -45,36 +45,33 @@ interface DailyCounters {
   perIp: Record<string, number>;
 }
 
-let entries: RequestLogEntry[] = [];
-let dailyCounters: DailyCounters = { day: "", server: 0, perIp: {} };
-let writeQueue: Promise<void> = Promise.resolve();
-
-function ensureFile(): void {
-  fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify({ entries: [], dailyCounters }, null, 2));
-  }
+interface LogData {
+  entries: RequestLogEntry[];
+  dailyCounters: DailyCounters;
 }
 
-function loadEntries(): void {
+// No in-memory cache: every read goes straight to the file so manual edits
+// are reflected immediately - PreYem
+function readFile(): LogData | null {
   try {
     const raw = JSON.parse(fs.readFileSync(filePath, "utf8")) as { entries?: RequestLogEntry[]; dailyCounters?: DailyCounters };
-    entries = Array.isArray(raw.entries) ? raw.entries.slice(-MAX_ENTRIES) : [];
-    dailyCounters = raw.dailyCounters ?? { day: "", server: 0, perIp: {} };
-    const today = new Date().toISOString().slice(0, 10);
-    if (dailyCounters.day !== today) {
-      dailyCounters = { day: today, server: 0, perIp: {} };
-    }
+    return {
+      entries: Array.isArray(raw.entries) ? raw.entries.slice(-MAX_ENTRIES) : [],
+      dailyCounters: raw.dailyCounters ?? { day: "", server: 0, perIp: {} },
+    };
   } catch {
     console.warn("[RequestLog] Could not read existing log file, starting fresh");
-    entries = [];
-    dailyCounters = { day: new Date().toISOString().slice(0, 10), server: 0, perIp: {} };
+    return null;
   }
 }
 
-function persist(): Promise<void> {
+// Serialize writes so two requests can't interleave and corrupt the JSON - PreYem
+let writeQueue: Promise<void> = Promise.resolve();
+
+function persist(data: LogData): Promise<void> {
+  fs.mkdirSync(dataDir, { recursive: true });
   return new Promise((resolve, reject) => {
-    fs.writeFile(filePath, JSON.stringify({ entries, dailyCounters }, null, 2), (err) => {
+    fs.writeFile(filePath, JSON.stringify(data, null, 2), (err) => {
       if (err) {
         console.error("[RequestLog] Failed to persist log:", err.message);
         reject(err);
@@ -85,63 +82,81 @@ function persist(): Promise<void> {
   });
 }
 
+// Read → mutate → write runs inside the write queue so it is atomic against
+// other queued writes - PreYem
+function runAtomic(mutate: (data: LogData) => void): Promise<void> {
+  const data = readFile() ?? { entries: [], dailyCounters: { day: "", server: 0, perIp: {} } };
+  mutate(data);
+  writeQueue = writeQueue.then(() => persist(data));
+  return writeQueue;
+}
+
 export function initRequestLog(): void {
-  ensureFile();
-  loadEntries();
+  if (!fs.existsSync(filePath)) {
+    persist({ entries: [], dailyCounters: { day: "", server: 0, perIp: {} } });
+  }
 }
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function rolloverDay(): void {
+function rolloverDay(data: LogData): void {
   const d = today();
-  if (dailyCounters.day !== d) {
-    dailyCounters = { day: d, server: 0, perIp: {} };
+  if (data.dailyCounters.day !== d) {
+    data.dailyCounters = { day: d, server: 0, perIp: {} };
     console.log(`[RequestLog] Daily quota counters reset for ${d}`);
   }
 }
 
 export function getServerDailyCount(): number {
-  rolloverDay();
-  return dailyCounters.server;
+  const data = readFile();
+  if (!data) return 0;
+  rolloverDay(data);
+  return data.dailyCounters.server;
 }
 
 export function getIpDailyCount(ip: string): number {
-  rolloverDay();
-  return dailyCounters.perIp[ip] ?? 0;
+  const data = readFile();
+  if (!data) return 0;
+  rolloverDay(data);
+  return data.dailyCounters.perIp[ip] ?? 0;
 }
 
 export function incrementDailyCounts(ip: string): void {
-  rolloverDay();
-  dailyCounters.server++;
-  dailyCounters.perIp[ip] = (dailyCounters.perIp[ip] ?? 0) + 1;
+  runAtomic((data) => {
+    rolloverDay(data);
+    data.dailyCounters.server++;
+    data.dailyCounters.perIp[ip] = (data.dailyCounters.perIp[ip] ?? 0) + 1;
+  });
 }
 
 export function decrementDailyCounts(ip: string): void {
-  rolloverDay();
-  dailyCounters.server = Math.max(0, dailyCounters.server - 1);
-  dailyCounters.perIp[ip] = Math.max(0, (dailyCounters.perIp[ip] ?? 0) - 1);
+  runAtomic((data) => {
+    rolloverDay(data);
+    data.dailyCounters.server = Math.max(0, data.dailyCounters.server - 1);
+    data.dailyCounters.perIp[ip] = Math.max(0, (data.dailyCounters.perIp[ip] ?? 0) - 1);
+  });
 }
 
 export function logEntry(entry: RequestLogEntry): Promise<void> {
-  entries.push(entry);
-  if (entries.length > MAX_ENTRIES) entries = entries.slice(-MAX_ENTRIES);
-  // Serialize writes so two requests can't interleave and corrupt the JSON - PreYem
-  writeQueue = writeQueue.then(persist);
-  return writeQueue;
+  return runAtomic((data) => {
+    data.entries.push(entry);
+    if (data.entries.length > MAX_ENTRIES) data.entries = data.entries.slice(-MAX_ENTRIES);
+  });
 }
 
 export function getEntries(): RequestLogEntry[] {
-  return [...entries].reverse();
+  const data = readFile();
+  return (data?.entries ?? []).slice().reverse();
 }
 
-// Empty the in-memory log and persist an empty array so the stats page is clean.
-// Daily quota counters are intentionally left untouched - PreYem
+// Clear the request log (same LOG_VIEW_KEY as the stats page) - PreYem
 export function clearLog(): Promise<void> {
-  entries = [];
-  writeQueue = writeQueue.then(persist);
-  return writeQueue;
+  return runAtomic((data) => {
+    // Daily quota counters are intentionally left untouched - PreYem
+    data.entries = [];
+  });
 }
 
 export interface StatsData {
@@ -177,6 +192,9 @@ function shortUserAgent(ua: string): string {
 }
 
 export function getStats(): StatsData {
+  const data = readFile();
+  const entries = data?.entries ?? [];
+
   const dayCounts = new Map<string, { count: number; words: number }>();
   const hourStatusCounts = new Map<string, { ok: number; failed: number }>();
   const dayStatusCounts = new Map<string, { ok: number; failed: number }>();
@@ -256,6 +274,15 @@ export function bodyPreview(body: unknown): string {
 export function wordCount(body: unknown): number {
   if (typeof body !== "string" || !body) return 0;
   return body.split(/\s+/).filter(Boolean).length;
+}
+
+// Render puts the real client IP in X-Forwarded-For but its internal hop can
+// make req.ip resolve to a server/internal address, so for logging we take the
+// first (client-most) XFF entry when present, otherwise fall back to req.ip - PreYem
+export function clientIp(request: Request): string {
+  const xff = request.headers["x-forwarded-for"];
+  const first = Array.isArray(xff) ? xff[0] : xff;
+  return first?.split(",")[0]?.trim() || request.ip || "unknown";
 }
 
 export function setProvider(request: Request, provider: string): void {

@@ -4,6 +4,7 @@
 const params = new URLSearchParams(location.search);
 if (params.get("key")) sessionStorage.setItem("logViewKey", params.get("key"));
 const key = sessionStorage.getItem("logViewKey") || "";
+document.getElementById("jsonLink").href = `/latest-requests?key=${encodeURIComponent(key)}`;
 
 let charts = {};
 let currentRange = "24h";
@@ -78,13 +79,10 @@ function renderKpis(stats) {
     ["Last entry", stats.lastTimestamp ? fmtDate(stats.lastTimestamp) : "—"],
   ];
   document.getElementById("kpis").innerHTML = kpis
-    .map(
-      ([label, value]) =>
-        `<div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3">
-      <div class="text-xl font-semibold">${value}</div>
-      <div class="text-xs text-slate-500 mt-1">${label}</div>
-    </div>`,
-    )
+    .map(([label, value]) => `<div class="kpi">
+      <div class="kpi-value">${value}</div>
+      <div class="kpi-label">${label}</div>
+    </div>`)
     .join("");
 }
 
@@ -120,8 +118,8 @@ function renderUsage(stats) {
   renderChart("usageChart", "bar", {
     labels,
     datasets: [
-      { label: "Success", data: okValues, backgroundColor: "#3b82f6" },
-      { label: "Failed", data: failedValues, backgroundColor: "#e06c75" },
+      { label: "Success", data: okValues, backgroundColor: "#4f8cff", borderRadius: 4 },
+      { label: "Failed", data: failedValues, backgroundColor: "#e06c75", borderRadius: 4 },
     ],
   });
 }
@@ -130,9 +128,9 @@ function renderValues(id, counts) {
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   document.getElementById(id).innerHTML = entries.length
     ? entries
-        .map(([name, count]) => `<li class="flex justify-between"><span>${escape(name)}</span><span class="text-slate-500">${count}</span></li>`)
+        .map(([name, count]) => `<li><span>${escape(name)}</span><span>${count}</span></li>`)
         .join("")
-    : '<li class="text-slate-500 italic">No data</li>';
+    : '<li class="empty">No data</li>';
 }
 
 function renderLog(entries) {
@@ -142,22 +140,37 @@ function renderLog(entries) {
     ? rows
         .map(
           (e, i) => `<tr>
-    <td>${i + 1}</td>
+    <td class="count">${i + 1}</td>
     <td>${fmtTime(e.timestamp)}</td>
-    <td style="color:${statusColor(e.status)}">${e.status}</td>
-    <td>${escape(e.provider ?? "—")}</td>
-    <td>${e.post?.wordCount ?? 0}</td>
+    <td><span class="status-pill ${statusClass(e.status)}">${e.status}</span></td>
+    <td>${providerTag(e.provider)}</td>
+    <td class="word-count">${e.post?.wordCount ?? 0}</td>
     <td>${escape(e.post?.subreddit || "—")}</td>
     <td>${escape(e.post?.title || "—")}</td>
   </tr>`,
         )
         .join("")
-    : '<tr><td class="text-slate-500 italic" colspan="7">No data</td></tr>';
+    : '<tr><td class="empty" colspan="7">No data</td></tr>';
 }
 
 function pieData(obj) {
-  return { labels: Object.keys(obj), datasets: [{ data: Object.values(obj) }] };
+  const labels = Object.keys(obj);
+  return {
+    labels,
+    datasets: [
+      {
+        data: Object.values(obj),
+        backgroundColor: labels.map((label) => (label === "200" ? "#3fb984" : label === "none" ? "#5c6a7e" : PIE_COLORS[labels.indexOf(label) % PIE_COLORS.length])),
+        borderColor: "rgba(7, 11, 20, 0.9)",
+        borderWidth: 2,
+      },
+    ],
+  };
 }
+
+const PIE_COLORS = ["#4f8cff", "#e06c75", "#f0b866", "#8e7cf0", "#3fb984", "#5ca8d8"];
+
+const CHART_FONT = { family: "'Inter', system-ui, sans-serif", size: 12 };
 
 function renderChart(id, type, data, isPie) {
   if (charts[id]) charts[id].destroy();
@@ -166,8 +179,9 @@ function renderChart(id, type, data, isPie) {
     type,
     data,
     options: {
+      maintainAspectRatio: false,
       plugins: {
-        legend: isPie ? { position: "bottom" } : {},
+        legend: isPie ? { position: "bottom", labels: { color: "#7c8aa0", font: CHART_FONT, padding: 12 } } : { labels: { color: "#7c8aa0", font: CHART_FONT } },
         datalabels: stackedBar
           ? {
               anchor: "center",
@@ -178,7 +192,17 @@ function renderChart(id, type, data, isPie) {
             }
           : { display: false },
       },
-      scales: isPie ? {} : { x: { stacked: true }, y: { beginAtZero: true, ticks: { precision: 0 } } },
+      scales: isPie
+        ? {}
+        : {
+            x: { stacked: true, grid: { color: "rgba(148, 163, 184, 0.08)" }, ticks: { color: "#7c8aa0", font: CHART_FONT } },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              ticks: { precision: 0, color: "#7c8aa0", font: CHART_FONT },
+              grid: { color: "rgba(148, 163, 184, 0.08)" },
+            },
+          },
     },
   });
 }
@@ -188,15 +212,18 @@ function fillTable(id, rows) {
   tbody.innerHTML = rows.length
     ? rows
         .map(
-          (r) =>
-            `<tr><td class="py-1.5 border-b border-slate-800">${escape(r.name)}</td><td class="py-1.5 border-b border-slate-800 text-slate-500">${r.count}</td></tr>`,
+          (r) => `<tr><td>${escape(r.name)}</td><td class="count">${r.count}</td></tr>`,
         )
         .join("")
-    : '<tr><td class="text-slate-500 italic" colspan="2">No data</td></tr>';
+    : '<tr><td class="empty" colspan="2">No data</td></tr>';
 }
 
-function statusColor(status) {
-  return status === 200 ? "#3fb984" : status >= 400 ? "#e06c75" : "#8b93a3";
+function statusClass(status) {
+  return status === 200 ? "ok" : status >= 400 ? "bad" : "";
+}
+function providerTag(provider) {
+  if (!provider) return "&mdash;";
+  return `<span class="provider-tag">${escape(provider)}</span>`;
 }
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function fmtTime(ts) {

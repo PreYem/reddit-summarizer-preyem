@@ -18,6 +18,7 @@ import {
   incrementDailyCounts,
   decrementDailyCounts,
   clearLog,
+  clientIp,
 } from "./services/requestLog";
 
 initRequestLog();
@@ -86,7 +87,7 @@ function requestLogMiddleware(request: express.Request, response: express.Respon
     const entry = {
       id: makeId(),
       timestamp: new Date().toISOString(),
-      ip: request.ip ?? "unknown",
+      ip: clientIp(request),
       userAgent: request.headers["user-agent"] ?? "",
       method: request.method,
       path: request.path,
@@ -128,14 +129,14 @@ app.use(
     // Quota is counted only when a provider actually served the request, so
     // failed summaries (500) don't consume the daily allowance. Rollback on
     // "close" fires after summarize.ts runs - PreYem
-    const clientIp = request.ip ?? "unknown";
-    if (!debugModeEnabled() && overDailyQuota(clientIp)) {
-      console.warn(`[Backend] Daily quota exceeded for ${clientIp}`);
+    const clientIpAddr = clientIp(request);
+    if (!debugModeEnabled() && overDailyQuota(clientIpAddr)) {
+      console.warn(`[Backend] Daily quota exceeded for ${clientIpAddr}`);
       return response.status(429).json({ serverError: "Daily limit reached, try again tomorrow." });
     }
 
     response.on("close", () => {
-      if (!debugModeEnabled() && !request.loggedProvider) rollbackDailyQuota(clientIp);
+      if (!debugModeEnabled() && !request.loggedProvider) rollbackDailyQuota(clientIpAddr);
     });
     next();
   },
