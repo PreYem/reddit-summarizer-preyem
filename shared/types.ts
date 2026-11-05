@@ -4,6 +4,7 @@ export interface SummarizeRequest {
   body: string;
   author: string;
   comments: string[];
+  postUrl?: string;
 }
 
 export interface SummarizeResponse {

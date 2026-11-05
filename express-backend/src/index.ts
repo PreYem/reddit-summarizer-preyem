@@ -99,10 +99,11 @@ function requestLogMiddleware(request: express.Request, response: express.Respon
               title: body.title,
               bodyPreview: bodyPreview(body.body),
               wordCount: wordCount(body.body),
-              subreddit: typeof body.currentSubreddit === "string" ? body.currentSubreddit : "",
-              author: typeof body.author === "string" ? body.author : "",
-            }
-          : null,
+            subreddit: typeof body.currentSubreddit === "string" ? body.currentSubreddit : "",
+            author: typeof body.author === "string" ? body.author : "",
+            postUrl: safePostUrl(body.postUrl),
+          }
+        : null,
     };
     void logEntry(entry);
   });
@@ -142,6 +143,19 @@ app.use(
   },
   summarizeRouter,
 );
+
+// Only link entries in the dashboard if the URL is a real https reddit post,
+// never trust arbitrary strings coming from clients - PreYem
+function safePostUrl(url: unknown): string | undefined {
+  if (typeof url !== "string") return undefined;
+  try {
+    const u = new URL(url);
+    if (u.protocol === "https:" && /^([\w-]+\.)?reddit\.com$/.test(u.host)) return u.href;
+  } catch {
+    // fall through - PreYem
+  }
+  return undefined;
+}
 
 function checkLogViewKey(request: express.Request): boolean {
   // Query param only for the HTML page's first load (key then lives in

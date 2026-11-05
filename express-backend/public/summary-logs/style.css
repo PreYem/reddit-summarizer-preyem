@@ -397,6 +397,16 @@ td.count {
   color: #cfe0ff;
 }
 
+.post-link {
+  color: #a9c6f5;
+  text-decoration: none;
+}
+
+.post-link:hover {
+  color: #cfe0ff;
+  text-decoration: underline;
+}
+
 .empty {
   color: var(--muted);
   font-style: italic;

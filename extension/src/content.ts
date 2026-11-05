@@ -25,6 +25,10 @@ function scrapePost() {
   // OP or Original Poster - PreYem
   const author = postEl.getAttribute("author") ?? "[deleted]";
 
+  // Canonical post URL for logging/click-through: permalink is the path, origin the host - PreYem
+  const permalink = postEl.getAttribute("permalink");
+  const postUrl = permalink ? `${window.location.origin}${permalink}` : window.location.href;
+
   // const topLevelComments = Array.from(document.querySelectorAll('shreddit-comment[depth="0"], shreddit-comment[depth="1"]')).filter((el) => {
   //   // Only keep ones whose parent isn't another shreddit-comment (true top-level)
   //   return !el.closest("shreddit-comment")?.parentElement?.closest("shreddit-comment");
@@ -44,7 +48,7 @@ function scrapePost() {
     .filter(Boolean)
     .slice(0, 100);
 
-  return { currentSubreddit, title, body, author, comments };
+  return { currentSubreddit, title, body, author, comments, postUrl };
 }
 
 // AI Summary injected button - PreYem

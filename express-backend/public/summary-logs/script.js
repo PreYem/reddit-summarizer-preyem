@@ -145,8 +145,8 @@ function renderLog(entries) {
     <td><span class="status-pill ${statusClass(e.status)}">${e.status}</span></td>
     <td>${providerTag(e.provider)}</td>
     <td class="word-count">${e.post?.wordCount ?? 0}</td>
-    <td>${escape(e.post?.subreddit || "—")}</td>
-    <td>${escape(e.post?.title || "—")}</td>
+    <td>${subredditCell(e.post?.subreddit)}</td>
+    <td>${titleCell(e)}</td>
   </tr>`,
         )
         .join("")
@@ -209,10 +209,11 @@ function renderChart(id, type, data, isPie) {
 
 function fillTable(id, rows) {
   const tbody = document.querySelector(`#${id}`);
+  const linkSubreddits = id === "subTable";
   tbody.innerHTML = rows.length
     ? rows
         .map(
-          (r) => `<tr><td>${escape(r.name)}</td><td class="count">${r.count}</td></tr>`,
+          (r) => `<tr><td>${linkSubreddits ? subredditCell(r.name) : escape(r.name)}</td><td class="count">${r.count}</td></tr>`,
         )
         .join("")
     : '<tr><td class="empty" colspan="2">No data</td></tr>';
@@ -224,6 +225,30 @@ function statusClass(status) {
 function providerTag(provider) {
   if (!provider) return "&mdash;";
   return `<span class="provider-tag">${escape(provider)}</span>`;
+}
+// Only link when the stored URL is a real https reddit post - PreYem
+function safeUrl(url) {
+  if (typeof url !== "string") return null;
+  try {
+    const u = new URL(url);
+    if (u.protocol === "https:" && /^([\w-]+\.)?reddit\.com$/.test(u.host)) return u.href;
+  } catch {}
+  return null;
+}
+function titleCell(e) {
+  const title = escape(e.post?.title || "—");
+  const url = safeUrl(e.post?.postUrl);
+  if (!url) return title;
+  return `<a class="post-link" href="${escape(url)}" target="_blank" rel="noopener">${title}</a>`;
+}
+// Subreddit links are derived from the name itself (r/Name), no extra entry needed - PreYem
+function subredditCell(name) {
+  if (!name) return "&mdash;";
+  const safe = /^r\/[\w-]+$/.test(name) ? `https://www.reddit.com/${name}/` : null;
+  const label = escape(name);
+  return safe
+    ? `<a class="post-link" href="${escape(safe)}" target="_blank" rel="noopener">${label}</a>`
+    : label;
 }
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function fmtTime(ts) {

@@ -33,6 +33,7 @@ export interface RequestLogEntry {
     wordCount: number;
     subreddit: string;
     author: string;
+    postUrl?: string;
   } | null;
 }
 
