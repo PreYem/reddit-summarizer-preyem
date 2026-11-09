@@ -1,6 +1,6 @@
 # Privacy Policy — Reddit Summarizer
 
-**Last updated:** October 12, 2026
+**Last updated:** November 9, 2026
 
 Reddit Summarizer is a browser extension that uses AI to summarize Reddit posts and their top comments. This page explains what data the extension interacts with and how it's used.
 
@@ -23,6 +23,7 @@ When you click "AI Summary," the extension sends the following content to our ba
 - The Reddit post's title and text content
 - The top comments on the post
 - The original poster's (OP) public Reddit handle (username)
+- The post's canonical Reddit URL (permalink)
 
 This data is used only to generate the AI summary that's displayed back to you. It is **not stored, logged, retained, or linked to any user or account** on our servers. Once the summary is generated and returned to your browser, the request data is discarded.
 
@@ -40,7 +41,9 @@ Only the content needed for the summary you requested is sent to the provider ha
 
 ## Data retention
 
-We do not retain, log, or store any of the content described above beyond the time needed to process a single summary request.
+The content described above is not retained beyond the time needed to process a single summary request, and it is never linked to any user, account, or browsing session.
+
+The backend does keep a rolling **usage log** of the latest 500 summary requests (older entries rotate out), used only to power the server's own usage-stats dashboard. Each entry stores: request timestamp, requester IP, user agent, HTTP status, which AI provider served the request, and post metadata — subreddit name, post title, a short body preview (first 50 characters), the post's word count, the OP handle, and the post URL. No comment text, no full post body, and no cookies or identifiers beyond the request's own IP are kept.
 
 ## Changes to this policy
 

@@ -7,8 +7,8 @@ A browser extension that summarizes Reddit posts and their comment sections usin
 - Summarizes the post body in a few concise sentences
 - Summarizes the top comments and community discussion
 - Labels the community reaction (Positive, Negative, Mixed, etc.)
-- Works on both Chromium-based (Chrome, Edge, Brave...etc) and Gecko-based browsers (Firefox, Waterfox, Librewolf...etc) and Firefox
-- Logs every request attempt (up to the latest 500) to `express-backend/data/request-log.json`, including requester IP, user agent, status, provider, post info, and full post word count — with a built-in stats dashboard (see below)
+- Works on both Chromium-based browsers (Chrome, Edge, Brave, Opera...etc) and Gecko-based browsers (Firefox, Waterfox, Librewolf...etc)
+- Logs every request attempt (up to the latest 500) to `express-backend/data/request-log.json`, including requester IP, user agent, status, provider, post info (with the canonical post URL), and full post word count — with a built-in stats dashboard (see below)
 
 ## Tech stack
 
@@ -78,6 +78,8 @@ The install script already built both targets. To rebuild after code changes, fr
 npm run build        # both Chromium and Gecko builds
 ```
 
+The published version lives in `extension/public/manifest.chromium.json` and `manifest.gecko.json` (`version` field) — bump it whenever you ship an update so browsers/stores see a new release (currently `1.6.0`).
+
 ### 5. Load the extension in your browser
  
 **Chromium:**
@@ -115,7 +117,7 @@ The backend starts on `http://localhost:3000` and the extension dev server watch
 
 ## Request log & stats dashboard
 
-Every request to `/summarize` is logged (up to the latest 500 entries, so a full 90-day window survives restarts) to `express-backend/data/request-log.json`: timestamp, IP, user agent, status, provider, and post info (title, body preview, full word count, subreddit, author).
+Every request to `/summarize` is logged (up to the latest 500 entries, so a full 90-day window survives restarts) to `express-backend/data/request-log.json`: timestamp, IP, user agent, status, provider, and post info (title, body preview, full word count, subreddit, author, and the canonical post URL `postUrl` — only kept when it's a real `https://*.reddit.com` link, and rendered as a clickable title link in the dashboard).
 
 While the backend is running, open the dashboard in a browser:
 
