@@ -25,6 +25,15 @@
   cursor: not-allowed;
 }
 
+.rs-btn:focus-visible {
+  outline: 2px solid #ff4500;
+  outline-offset: 2px;
+}
+
+.rs-theme-light .rs-btn:focus-visible {
+  outline: 2px solid #0079d3;
+}
+
 .rs-modal-backgroundOverlay {
   position: fixed;
   inset: 0;
@@ -88,9 +97,7 @@
   justify-content: center;
   padding: 0;
   border-radius: 4px;
-  transition:
-    color 0.15s,
-    background 0.15s;
+  transition: color 0.15s,background 0.15s;
   line-height: 1;
 }
 
@@ -326,4 +333,13 @@
 
 .rs-theme-light .rs-modal-footer-text {
   color: #7c7c7c;
+}
+
+.rs-live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: rect(0 0 0 0);
+  white-space: nowrap;
 }
