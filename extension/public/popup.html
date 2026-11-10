@@ -12,9 +12,10 @@
       <header class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff4500] text-white">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
+            </svg> -->
+            <img src="icons/icon-512.png" />
           </span>
           <h1 class="text-[15px] font-bold leading-none text-[#ff4500]">Reddit Summarizer</h1>
         </div>
@@ -24,7 +25,7 @@
       <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
         Open any Reddit text post and click
         <strong class="font-semibold text-[#ff4500]">AI Summary</strong>
-        to get a concise breakdown of the post along with the most relevant insights from the top comments.
+        button to get a concise breakdown of the post along with the most relevant insights from the top comments.
       </p>
 
       <!-- Status + settings -->
@@ -42,7 +43,16 @@
           rel="noopener"
           class="flex items-center gap-1.5 rounded-md border border-[#3988ff]/40 bg-[#3988ff]/15 px-2.5 py-1 text-[11.5px] font-semibold text-[#d7dadc] no-underline transition-colors duration-150 hover:bg-[#3988ff]/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff]"
         >
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            viewBox="0 0 24 24"
+            width="13"
+            height="13"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <line x1="4" y1="21" x2="4" y2="14" />
             <line x1="4" y1="10" x2="4" y2="3" />
             <line x1="12" y1="21" x2="12" y2="12" />
@@ -53,7 +63,7 @@
             <line x1="9" y1="8" x2="15" y2="8" />
             <line x1="17" y1="16" x2="23" y2="16" />
           </svg>
-          AI Settings
+          Settings
         </a>
       </div>
 
@@ -62,15 +72,12 @@
         <p class="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#ff4500]">⚠️ Known limitations</p>
         <ul class="flex list-disc flex-col gap-1.5 pl-4 marker:text-[#ff4500]/60">
           <li class="text-[11.5px] leading-relaxed text-white/60">
-            <span class="font-semibold text-white/75">Cloud mode:</span> the AI runs on a free tier, so high traffic may cause temporary failures.
-            Try again later.
+            <span class="font-semibold text-white/75">Backend availability:</span> The free-tier backend may occasionally experience high traffic or
+            temporary downtime. It also goes to sleep after 15–20 minutes of inactivity, so the first request may take 1–2 minutes to become
+            available. Try again if a request fails. Local and own-key modes are unaffected.
           </li>
           <li class="text-[11.5px] leading-relaxed text-white/60">
-            <span class="font-semibold text-white/75">Cloud mode:</span> the backend sleeps after 15-20 minutes without use, so the first request may
-            fail and should work again within 1-2 minutes. Local and own-key modes aren't affected.
-          </li>
-          <li class="text-[11.5px] leading-relaxed text-white/60">
-            Media content (videos, images, GIFs) is left out of summaries to keep responses fast and reduce token usage.
+            Media content (videos, images, GIFs) is excluded from summaries to keep responses fast and reduce token usage.
           </li>
           <li class="text-[11.5px] leading-relaxed text-white/60">
             Still in development. Found a bug?
@@ -94,8 +101,19 @@
       >
         <span class="flex items-center gap-3">
           <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3988ff]/15 text-[#3988ff]">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
             </svg>
           </span>
           <span class="flex flex-col gap-0.5">
@@ -135,7 +153,17 @@
             aria-label="Portfolio"
             class="flex items-center text-white/30 transition-colors duration-150 hover:text-[#4a9eff]"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
