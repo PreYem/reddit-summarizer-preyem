@@ -2,6 +2,7 @@
 
 import { fetchSummary } from "./api";
 import { createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./summaryModal";
+import { LocalSummarizeError } from "./localLlm";
 
 // Function to scrab the post for data processing to be sent to the backend - PreYem
 function scrapePost() {
@@ -110,8 +111,13 @@ function inject(insertParent: Element, refChild: Node | null) {
       } catch (error) {
         // In case errors come up during backend call - PreYem
         console.error("[RS] Error:", error);
-        setButtonState(injectedSummaryButton, "error");
-        liveRegion.textContent = "Failed to summarize. Backend server issue, try again later.";
+        // #18 local path: local failures carry a user-facing message (retry policy already ran
+        // inside localLlm), cloud ones keep the generic backend text - PreYem
+        const localFailure = error instanceof LocalSummarizeError;
+        setButtonState(injectedSummaryButton, "error", localFailure ? error.message : undefined);
+        liveRegion.textContent = localFailure
+          ? error.message
+          : "Failed to summarize. Backend server issue, try again later.";
 
         // Reverting button to it's original state in case there was an issue - PreYem
         setTimeout(() => {

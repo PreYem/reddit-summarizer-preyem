@@ -4,7 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, watch } from "fs";
 // Only the icon sizes referenced by each manifest are required in the build.
 function copyPublicFiles(target) {
   const dist = `dist/${target}`;
-  for (const file of ["background.js", "popup.html", "styles.css", "popup.css"]) {
+  for (const file of ["background.js", "popup.html", "settings.html", "settings.js", "styles.css", "popup.css"]) {
     copyFileSync(`public/${file}`, `${dist}/${file}`);
   }
   copyFileSync(`public/manifest.${target}.json`, `${dist}/manifest.json`);

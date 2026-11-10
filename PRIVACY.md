@@ -1,6 +1,6 @@
 # Privacy Policy — Reddit Summarizer
 
-**Last updated:** November 9, 2026
+**Last updated:** November 10, 2026
 
 Reddit Summarizer is a browser extension that uses AI to summarize Reddit posts and their top comments. This page explains what data the extension interacts with and how it's used.
 
@@ -38,6 +38,15 @@ The scraped post/comment content is sent to our backend server, which forwards i
 Keep in mind that these models are subject to change
 
 Only the content needed for the summary you requested is sent to the provider handling that request. No other third parties receive this data.
+
+## Own API & local LLM modes
+
+The extension's settings page offers two alternatives to the cloud backend:
+
+- **Own API key** — the post/comment content is sent **only** to the provider you configured (OpenAI, Anthropic, or an OpenAI-compatible service at your own URL). We don't relay anything ourselves; you are then subject to that provider's own privacy policy.
+- **Local server** — post/comment content is sent **only** to the endpoint you configured (typically a server on your own machine): no cloud backend request, no request logging, no quotas, and nothing leaves your machine beyond that server. The full source code is public (https://github.com/PreYem/reddit-summarizer-preyem) so you can verify this.
+
+In both modes, everything (source choice, endpoint, optional key, model choice) is kept in your browser's extension storage on your machine. The key is only ever sent as an `Authorization` (or `x-api-key` for Anthropic) header to your configured provider; it is not logged, not echoed back, and not shared with any third party.
 
 ## Data retention
 

@@ -7,6 +7,7 @@ A browser extension that summarizes Reddit posts and their comment sections usin
 - Summarizes the post body in a few concise sentences
 - Summarizes the top comments and community discussion
 - Labels the community reaction (Positive, Negative, Mixed, etc.)
+- Summarizes with your own LLM — your API key (OpenAI/Anthropic/custom) or a local server on your machine (LM Studio, Ollama, llama.cpp…) via a settings page — instead of the cloud backend, same prompt, same structured output
 - Works on both Chromium-based browsers (Chrome, Edge, Brave, Opera...etc) and Gecko-based browsers (Firefox, Waterfox, Librewolf...etc)
 - Logs every request attempt (up to the latest 500) to `express-backend/data/request-log.json`, including requester IP, user agent, status, provider, post info (with the canonical post URL), and full post word count — with a built-in stats dashboard (see below)
 
@@ -78,7 +79,7 @@ The install script already built both targets. To rebuild after code changes, fr
 npm run build        # both Chromium and Gecko builds
 ```
 
-The published version lives in `extension/public/manifest.chromium.json` and `manifest.gecko.json` (`version` field) — bump it whenever you ship an update so browsers/stores see a new release (currently `1.6.0`).
+The published version lives in `extension/public/manifest.chromium.json` and `manifest.gecko.json` (`version` field) — bump it whenever you ship an update so browsers/stores see a new release (currently `1.7.0`).
 
 ### 5. Load the extension in your browser
  
@@ -115,6 +116,24 @@ The backend starts on `http://localhost:3000` and the extension dev server watch
 
 ---
 
+## Settings page (cloud / own API / local LLM)
+
+The settings page (the add-on's options page) opens from the popup's "Open AI Settings" link or from your browser's add-on manager (it no longer opens automatically on install):
+
+- **Source** — `Cloud` (default, the backend below), `Own API key` (OpenAI, Anthropic, or any OpenAI-compatible service at your own URL), or `Local server` (your own LLM — the post data never leaves your machine)
+- Each source shows only the inputs it needs; the **model dropdown is auto-detected** from your server's model list (`/models`, Anthropic `/v1/models`, Ollama `/api/tags`) — you never type a model name
+- **API key** is kept in extension storage only, sent as `Authorization: Bearer` (or `x-api-key` for Anthropic) to your configured provider and nowhere else
+- **Save** persists across sessions/browser restarts; **Test connection** pings the model-list route and refills the dropdown
+- All non-cloud paths send the exact same prompt as cloud (same 5-key schema, both sides compile the shared `buildPrompt`), and the modal footer reads `Local | <model>` or `Own API | <model>`
+
+Notes:
+
+- Requests run from the extension's own background page, so your server needs **no CORS headers** for the extension origin. In Chromium, `localhost`, `127.0.0.1`, `api.openai.com` and `api.anthropic.com` are pre-approved via `host_permissions`; any other host gets a one-time permission prompt on Save/Test (Chromium can't reach arbitrary LAN/IP hosts at all — Firefox can).
+- Ollama still checks request origins: start it with `OLLAMA_ORIGINS=chrome-extension://*,moz-extension://*` if it answers 403.
+- The prompt includes up to 100 comments — small context windows may choke small models; the extension retries once with a stricter JSON-only instruction, then shows the error toast (no silent cloud fallback).
+
+---
+
 ## Request log & stats dashboard
 
 Every request to `/summarize` is logged (up to the latest 500 entries, so a full 90-day window survives restarts) to `express-backend/data/request-log.json`: timestamp, IP, user agent, status, provider, and post info (title, body preview, full word count, subreddit, author, and the canonical post URL `postUrl` — only kept when it's a real `https://*.reddit.com` link, and rendered as a clickable title link in the dashboard).
@@ -137,7 +156,7 @@ Raw data endpoints (same key, via `?key=` param or `log-view-key` header):
 
 ## Notes
 
-- Make sure the backend is running before using the extension
+- Make sure the backend is running before using the extension (cloud mode only — local mode needs your own server instead)
 - The extension reads the current Reddit tab — navigate to any Reddit post and click the injected AI Summary button to summarize it
 - Requests are rate limited per IP, with a server-wide daily cap that resets on UTC-day boundaries; quotas are skipped only in local debug mode
 - Daily quota counters live in `request-log.json` (`dailyCounters`) so they survive restarts/deploys; clearing the log via `DELETE /summary-logs` does not reset them

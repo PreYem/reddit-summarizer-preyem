@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="tailwind.css" />
+    <title>Reddit Summarizer Settings</title>
+  </head>
+  <body class="w-full min-h-screen bg-[#1a1a1b] text-[#d7dadc] font-sans m-0 p-5">
+    <div class="flex flex-col gap-4">
+      <!-- Header -->
+      <div class="flex items-baseline justify-between">
+        <h1 class="text-[17px] font-bold text-[#ff4500]">Reddit Summarizer Settings</h1>
+        <span class="text-[10px] text-white/20">v1.7.0</span>
+      </div>
+
+      <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
+        Choose where summaries come from: the cloud backend (default), your own API key (OpenAI, Anthropic or any
+        OpenAI-compatible service), or a local server on your machine. Each source only shows the inputs it needs.
+        Settings persist across sessions and browser restarts.
+      </p>
+
+      <!-- Source -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[12.5px] font-semibold" for="rs-mode">Source</label>
+        <select id="rs-mode" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2">
+          <option value="cloud">Cloud — built-in backend</option>
+          <option value="api">Own API key</option>
+          <option value="local">Local server — nothing leaves your machine</option>
+        </select>
+      </div>
+
+      <!-- Own API section: provider only -->
+      <div id="sec-api" hidden class="flex flex-col gap-1.5">
+        <label class="text-[12.5px] font-semibold" for="rs-provider">Provider</label>
+        <select id="rs-provider" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2">
+          <option value="openai">OpenAI — api.openai.com</option>
+          <option value="anthropic">Anthropic — api.anthropic.com</option>
+          <option value="other">Other (OpenAI-compatible) — custom URL</option>
+        </select>
+      </div>
+
+      <!-- Local section: flavor only -->
+      <div id="sec-local" hidden class="flex flex-col gap-1.5">
+        <label class="text-[12.5px] font-semibold" for="rs-flavor">API flavor</label>
+        <select id="rs-flavor" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2">
+          <option value="openai">openai — /v1/chat/completions (LM Studio, llama.cpp, vLLM)</option>
+          <option value="ollama">ollama — /api/chat (native)</option>
+        </select>
+      </div>
+
+      <!-- Endpoint: OpenAI-compatible custom + local servers -->
+      <div id="sec-server" hidden class="flex flex-col gap-1.5">
+        <label class="text-[12.5px] font-semibold" for="rs-endpoint">Endpoint URL</label>
+        <input
+          id="rs-endpoint"
+          type="text"
+          class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2"
+          placeholder="http://localhost:1234/v1"
+        />
+      </div>
+
+      <!-- Key: required for own API, optional for local servers -->
+      <div id="sec-key" hidden class="flex flex-col gap-1.5">
+        <label class="text-[12.5px] font-semibold" for="rs-api-key">API key (required for own API, optional for local servers)</label>
+        <input
+          id="rs-api-key"
+          type="password"
+          autocomplete="off"
+          class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2"
+        />
+      </div>
+
+      <!-- Model: read from the server, never typed -->
+      <div id="sec-model" hidden class="flex flex-col gap-1.5">
+        <label class="text-[12.5px] font-semibold" for="rs-model">Model (read from your server)</label>
+        <select id="rs-model" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2"></select>
+        <p class="text-[10.5px] text-white/45">
+          The dropdown fills itself with your server's model list when the page opens; if it's empty, use Test connection.
+        </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-2">
+        <button
+          id="rs-save"
+          class="py-1 px-3 rounded bg-[#3988ff]/25 text-[#d7dadc] border border-[#3988ff]/40 text-[12px] font-semibold cursor-pointer"
+        >
+          Save
+        </button>
+        <button
+          id="rs-test"
+          class="py-1 px-3 rounded bg-[#ff4500]/15 text-[#d7dadc] border border-[#ff4500]/40 text-[12px] font-semibold cursor-pointer"
+        >
+          Test connection
+        </button>
+      </div>
+
+      <!-- Status line -->
+      <p id="rs-status" class="text-[11.5px] leading-normal text-white/45">No settings saved yet — cloud mode in use.</p>
+
+      <!-- Hints -->
+      <div class="flex flex-col gap-1.5 py-2 px-3 rounded-lg bg-[#ff4500]/8 text-[10.5px] leading-relaxed text-[#ffb3a6]">
+        <span class="block">Chromium pre-allows localhost, 127.0.0.1, api.openai.com and api.anthropic.com; any other host asks once for permission on Save/Test.</span>
+        <span class="block">Ollama: start it with OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it, otherwise it answers 403.</span>
+        <span class="block">The prompt includes up to 100 comments — small context windows may choke small models (the extension retries once, then shows an error).</span>
+      </div>
+
+      <div class="h-px bg-white/[0.07]"></div>
+
+      <p class="text-[11px] text-white/35">
+        Local mode talks only to your server: the post data never leaves your machine, no request logging and no quotas
+        apply. The source code is open:
+        <a
+          href="https://github.com/PreYem/reddit-summarizer-preyem"
+          target="_blank"
+          rel="noopener"
+          class="text-[#3988ff] no-underline hover:underline"
+          >github.com/PreYem/reddit-summarizer-preyem</a
+        >.
+      </p>
+    </div>
+
+    <script src="settings.js"></script>
+  </body>
+</html>

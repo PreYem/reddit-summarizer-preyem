@@ -3,7 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync } from "fs";
 const target = process.argv[2] === "gecko" ? "gecko" : "chromium";
 const dist = "dist/" + target;
 
-for (const file of ["background.js", "popup.html", "styles.css", "popup.css"]) {
+for (const file of ["background.js", "popup.html", "settings.html", "settings.js", "styles.css", "popup.css"]) {
   copyFileSync("public/" + file, dist + "/" + file);
 }
 
