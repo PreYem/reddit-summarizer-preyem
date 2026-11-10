@@ -42,7 +42,7 @@ function isValidEndpoint(value) {
 }
 
 function modeLabel(mode) {
-  return mode === "api" ? "Own API" : mode === "local" ? "Local" : "Cloud";
+  return mode === "api" ? "AI Cloud Provider" : mode === "local" ? "Local" : "Cloud";
 }
 
 // Show only the inputs the chosen source actually uses (#18 feedback)
@@ -105,10 +105,10 @@ function modelHeaders(cfg) {
 // openai-style {data:[{id}]} + ollama-style {models:[{name}]} listings - PreYem
 function parseModelIds(json) {
   const ids = [];
-  for (const entry of (json.data || [])) {
+  for (const entry of json.data || []) {
     if (entry && typeof entry.id === "string") ids.push(entry.id);
   }
-  for (const entry of (json.models || [])) {
+  for (const entry of json.models || []) {
     if (!entry) continue;
     const name = entry.name || entry.model;
     if (typeof name === "string") ids.push(name);
@@ -124,7 +124,7 @@ function setModelOptions(ids, preferred) {
     option.textContent = id;
     modelSelect.appendChild(option);
   }
-  const chosen = ids.indexOf(preferred) >= 0 ? preferred : (ids.length ? ids[0] : null);
+  const chosen = ids.indexOf(preferred) >= 0 ? preferred : ids.length ? ids[0] : null;
   for (const option of modelSelect.options) option.selected = option.value === chosen;
 }
 
@@ -137,7 +137,10 @@ function fetchModelIds(cfg, callback) {
         callback([]);
         return;
       }
-      response.json().then((json) => callback(parseModelIds(json)), () => callback([]));
+      response.json().then(
+        (json) => callback(parseModelIds(json)),
+        () => callback([]),
+      );
     })
     .catch(() => callback([]));
 }
@@ -217,7 +220,7 @@ saveButton.addEventListener("click", () => {
       return;
     }
     if (!apiKey) {
-      setStatus("error", "Own API mode needs the provider's API key before saving.");
+      setStatus("error", "AI Cloud Provider mode needs the provider's API key before saving.");
       return;
     }
     if (!model) {

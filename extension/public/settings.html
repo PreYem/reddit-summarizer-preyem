@@ -15,9 +15,9 @@
       </div>
 
       <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
-        Choose where summaries come from: the cloud backend (default), your own API key (OpenAI, Anthropic or any
-        OpenAI-compatible service), or a local server on your machine. Each source only shows the inputs it needs.
-        Settings persist across sessions and browser restarts.
+        Choose where summaries come from: the cloud backend (default), your AI Cloud Provider key (OpenAI, Anthropic or any OpenAI-compatible
+        service), or a local server on your machine. Each source only shows the inputs it needs. Settings persist across sessions and browser
+        restarts.
       </p>
 
       <!-- Source -->
@@ -25,12 +25,12 @@
         <label class="text-[12.5px] font-semibold" for="rs-mode">Source</label>
         <select id="rs-mode" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2">
           <option value="cloud">Cloud — built-in backend</option>
-          <option value="api">Own API key</option>
+          <option value="api">AI Cloud Provider key</option>
           <option value="local">Local server — nothing leaves your machine</option>
         </select>
       </div>
 
-      <!-- Own API section: provider only -->
+      <!-- AI Cloud Provider section: provider only -->
       <div id="sec-api" hidden class="flex flex-col gap-1.5">
         <label class="text-[12.5px] font-semibold" for="rs-provider">Provider</label>
         <select id="rs-provider" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2">
@@ -60,15 +60,10 @@
         />
       </div>
 
-      <!-- Key: required for own API, optional for local servers -->
+      <!-- Key: required for AI Cloud Provider, optional for local servers -->
       <div id="sec-key" hidden class="flex flex-col gap-1.5">
-        <label class="text-[12.5px] font-semibold" for="rs-api-key">API key (required for own API, optional for local servers)</label>
-        <input
-          id="rs-api-key"
-          type="password"
-          autocomplete="off"
-          class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2"
-        />
+        <label class="text-[12.5px] font-semibold" for="rs-api-key">API key (required for AI Cloud Provider, optional for local servers)</label>
+        <input id="rs-api-key" type="password" autocomplete="off" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2" />
       </div>
 
       <!-- Model: read from the server, never typed -->
@@ -101,16 +96,23 @@
 
       <!-- Hints -->
       <div class="flex flex-col gap-1.5 py-2 px-3 rounded-lg bg-[#ff4500]/8 text-[10.5px] leading-relaxed text-[#ffb3a6]">
-        <span class="block">Chromium pre-allows localhost, 127.0.0.1, api.openai.com and api.anthropic.com; any other host asks once for permission on Save/Test.</span>
-        <span class="block">Ollama: start it with OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it, otherwise it answers 403.</span>
-        <span class="block">The prompt includes up to 100 comments — small context windows may choke small models (the extension retries once, then shows an error).</span>
+        <span class="block"
+          >Chromium pre-allows localhost, 127.0.0.1, api.openai.com and api.anthropic.com; any other host asks once for permission on Save/Test.</span
+        >
+        <span class="block"
+          >Ollama: start it with OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it, otherwise it answers 403.</span
+        >
+        <span class="block"
+          >The prompt includes up to 100 comments — small context windows may choke small models (the extension retries once, then shows an
+          error).</span
+        >
       </div>
 
       <div class="h-px bg-white/[0.07]"></div>
 
       <p class="text-[11px] text-white/35">
-        Local mode talks only to your server: the post data never leaves your machine, no request logging and no quotas
-        apply. The source code is open:
+        Local mode talks only to your server: the post data never leaves your machine, no request logging and no quotas apply. The source code is
+        open:
         <a
           href="https://github.com/PreYem/reddit-summarizer-preyem"
           target="_blank"

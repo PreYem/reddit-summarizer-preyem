@@ -5,13 +5,8 @@
   "description": "Summarize Reddit posts with AI",
   "permissions": ["storage"],
   "options_page": "settings.html",
-  "host_permissions": [
-    "https://www.reddit.com/*",
-    "http://localhost/*",
-    "http://127.0.0.1/*",
-    "https://api.openai.com/*",
-    "https://api.anthropic.com/*"
-  ],
+  "host_permissions": ["https://www.reddit.com/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
   "icons": {
     "512": "icons/icon-512.png"
   },

@@ -50,8 +50,9 @@ function buildRequest(settings, prompt) {
   if (kind === "anthropic") {
     headers["x-api-key"] = settings.apiKey || "";
     headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
     url = /\/v1$/.test(base) ? base + "/messages" : base + "/v1/messages";
-    payload = { model: settings.model, max_tokens: 1024, messages: [{ role: "user", content: prompt }] };
+    payload = { model: settings.model, max_tokens: 2048, messages: [{ role: "user", content: prompt }] };
   } else if (kind === "ollama") {
     url = base + "/api/chat";
     // Ollama defaults to streaming NDJSON, which would break response.json() - PreYem
@@ -102,7 +103,11 @@ function extractJson(text) {
 
 function parseSummary(raw) {
   const json = extractJson(
-    raw.replace(/<think>[\s\S]*?<\/think>/g, "").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim(),
+    raw
+      .replace(/<think>[\s\S]*?<\/think>/g, "")
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .trim(),
   );
   if (!json) return null;
   let parsed;
@@ -136,7 +141,7 @@ async function runCustomLlm(message, sendResponse) {
       return;
     }
 
-    summary.aiModel = (settings.mode === "local" ? "Local | " : "Own API | ") + settings.model;
+    summary.aiModel = (settings.mode === "local" ? "Local | " : "Your AI Cloud Provider | ") + settings.model;
     sendResponse({ ok: true, summary });
   } catch (error) {
     sendResponse({ ok: false, error: error.message || String(error) });

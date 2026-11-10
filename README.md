@@ -116,15 +116,15 @@ The backend starts on `http://localhost:3000` and the extension dev server watch
 
 ---
 
-## Settings page (cloud / own API / local LLM)
+## Settings page (cloud / AI Cloud Provider / local LLM)
 
 The settings page (the add-on's options page) opens from the popup's "Open AI Settings" link or from your browser's add-on manager (it no longer opens automatically on install):
 
-- **Source** — `Cloud` (default, the backend below), `Own API key` (OpenAI, Anthropic, or any OpenAI-compatible service at your own URL), or `Local server` (your own LLM — the post data never leaves your machine)
+- **Source** — `Cloud` (default, the backend below), `AI Cloud Provider key` (OpenAI, Anthropic, or any OpenAI-compatible service at your own URL), or `Local server` (your own LLM — the post data never leaves your machine)
 - Each source shows only the inputs it needs; the **model dropdown is auto-detected** from your server's model list (`/models`, Anthropic `/v1/models`, Ollama `/api/tags`) — you never type a model name
 - **API key** is kept in extension storage only, sent as `Authorization: Bearer` (or `x-api-key` for Anthropic) to your configured provider and nowhere else
 - **Save** persists across sessions/browser restarts; **Test connection** pings the model-list route and refills the dropdown
-- All non-cloud paths send the exact same prompt as cloud (same 5-key schema, both sides compile the shared `buildPrompt`), and the modal footer reads `Local | <model>` or `Own API | <model>`
+- All non-cloud paths send the exact same prompt as cloud (same 5-key schema, both sides compile the shared `buildPrompt`), and the modal footer reads `Local | <model>` or `AI Cloud Provider | <model>`
 
 Notes:
 
