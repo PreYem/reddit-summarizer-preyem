@@ -17,13 +17,26 @@ export interface LocalSettings {
   endpoint?: string;
   apiKey?: string;
   model?: string;
+  // #19 thinking level for local requests; missing/invalid means "none" — background owns
+  // the per-flavor mapping, and invalid values never invalidate the whole settings - PreYem
+  think?: "none" | "low" | "medium" | "high";
 }
+
+const THINK_VALUES = ["none", "low", "medium", "high"];
 
 // Dedicated error type so content.ts can tell local/API failures (user-facing message)
 // apart from cloud backend failures (generic message) - PreYem
 export class LocalSummarizeError extends Error {
   constructor(message: string) {
     super(message);
+  }
+}
+
+// #20 cancellation: the background aborted this round-trip because the user navigated
+// away/closed the tab — content.ts stays silent instead of flashing an error - PreYem
+export class CancelledError extends Error {
+  constructor(message?: string) {
+    super(message || "Request cancelled");
   }
 }
 
@@ -50,6 +63,9 @@ export function readSettings(): Promise<LocalSettings | null> {
       if (!saved || saved.v !== SETTINGS_VERSION || !modeOk) {
         resolve(null);
         return;
+      }
+      if (saved.think !== undefined && THINK_VALUES.indexOf(saved.think) < 0) {
+        delete saved.think;
       }
       if (saved.mode === "api") {
         const providerOk = saved.provider === "openai" || saved.provider === "anthropic" || saved.provider === "other";
@@ -87,6 +103,9 @@ export async function summarizeLocally(settings: LocalSettings, data: SummarizeR
     });
   });
 
+  if (response.cancelled) {
+    throw new CancelledError(response.error);
+  }
   if (!response.ok || !response.summary) {
     throw new LocalSummarizeError(response.error || "Local request failed without a message from the server");
   }

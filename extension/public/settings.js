@@ -15,15 +15,50 @@ const endpointInput = document.getElementById("rs-endpoint");
 const apiKeyInput = document.getElementById("rs-api-key");
 const modelSelect = document.getElementById("rs-model");
 const saveButton = document.getElementById("rs-save");
+const saveHint = document.getElementById("rs-save-hint");
 const testButton = document.getElementById("rs-test");
 const statusLine = document.getElementById("rs-status");
+const thinkSelect = document.getElementById("rs-think");
+const keyEyeButton = document.getElementById("rs-key-eye");
+const keyEyeSlash = document.getElementById("rs-key-eye-slash");
 const sections = {
   api: document.getElementById("sec-api"),
   local: document.getElementById("sec-local"),
   server: document.getElementById("sec-server"),
   key: document.getElementById("sec-key"),
   model: document.getElementById("sec-model"),
+  think: document.getElementById("sec-think"),
 };
+
+// #19 thinking level: missing/invalid storage value means "none" (no schema bump) - PreYem
+const THINK_VALUES = ["none", "low", "medium", "high"];
+
+// Ollama's native /api/chat only does think true/false — the level select is replaced by
+// None/On, and "On" stores "low" (background maps anything != none to think:true) - PreYem
+function setThinkOptions(preferred) {
+  while (thinkSelect.firstChild) thinkSelect.removeChild(thinkSelect.firstChild);
+  const options =
+    flavorSelect.value === "ollama"
+      ? [
+          ["none", "None — off (Recommended)"],
+          ["low", "On — thinking enabled"],
+        ]
+      : [
+          ["none", "None — off (Recommended)"],
+          ["low", "Low"],
+          ["medium", "Medium"],
+          ["high", "High"],
+        ];
+  for (const entry of options) {
+    const option = document.createElement("option");
+    option.value = entry[0];
+    option.textContent = entry[1];
+    thinkSelect.appendChild(option);
+  }
+  const allowed = options.map((entry) => entry[0]);
+  const chosen = allowed.includes(preferred) ? preferred : "none";
+  for (const option of thinkSelect.options) option.selected = option.value === chosen;
+}
 
 function setStatus(kind, text) {
   statusLine.textContent = text;
@@ -54,6 +89,7 @@ function showSections() {
   sections.server.hidden = mode === "cloud" || (mode === "api" && provider !== "other");
   sections.key.hidden = mode === "cloud";
   sections.model.hidden = mode === "cloud";
+  sections.think.hidden = mode !== "local";
 }
 
 function formConfig() {
@@ -64,7 +100,45 @@ function formConfig() {
     endpoint: endpointInput.value.trim(),
     apiKey: apiKeyInput.value.trim(),
     model: modelSelect.value,
+    think: thinkSelect.value,
   };
+}
+
+// ---- #20 Save gate: Save stays disabled until Test connection passes for the CURRENT
+// connection fields. Cloud mode has nothing to test, so Save is always enabled there - PreYem
+
+// Fingerprint of the connection fields the last successful Test actually exercised
+let verifiedKey = null;
+
+// Editing any of these invalidates a passed Test. Model and Thinking are left out on purpose:
+// picking a model right after Test is the normal flow and must not force a second Test.
+// To make EVERY field invalidate the test, add modelSelect and thinkSelect to this list.
+const CONNECTION_FIELDS = [modeSelect, providerSelect, flavorSelect, endpointInput, apiKeyInput];
+
+function connectionKey(cfg) {
+  return JSON.stringify([cfg.mode, cfg.provider, cfg.flavor, cfg.endpoint, cfg.apiKey]);
+}
+
+function updateSaveState() {
+  const cfg = formConfig();
+  const allowed = cfg.mode === "cloud" || verifiedKey === connectionKey(cfg);
+  saveButton.disabled = !allowed;
+  saveButton.title = allowed ? "" : "Run Test connection successfully first";
+  saveHint.hidden = allowed;
+}
+
+// An edit that locks Save also clears the stale "Connected" message so the page doesn't contradict itself
+function onConnectionEdit() {
+  const wasEnabled = !saveButton.disabled;
+  updateSaveState();
+  if (wasEnabled && saveButton.disabled) {
+    setStatus("info", "Connection settings changed — run Test connection to enable Save.");
+  }
+}
+
+for (const field of CONNECTION_FIELDS) {
+  field.addEventListener("input", onConnectionEdit);
+  field.addEventListener("change", onConnectionEdit);
 }
 
 // Mirrors extension/public/background.js: same base URL + request kind rules, used
@@ -182,12 +256,30 @@ function persist(settings) {
 
 modeSelect.addEventListener("change", showSections);
 providerSelect.addEventListener("change", showSections);
+// Rebuilding the thinking dropdown when the flavor changes (ollama = None/On only) - PreYem
+flavorSelect.addEventListener("change", () => {
+  showSections();
+  setThinkOptions(thinkSelect.value);
+});
+
+// Eye toggle: password inputs never render their typed value, so the button flips the
+// SAME input's type (the value stays in the element, no retyping) and hides the slash.
+// Reveal state is deliberately not persisted — hidden again on every page load.
+// This fires no input/change event, so it never counts as an edit - PreYem
+keyEyeButton.addEventListener("click", () => {
+  const revealed = apiKeyInput.type === "password";
+  apiKeyInput.type = revealed ? "text" : "password";
+  keyEyeSlash.style.display = revealed ? "none" : "inline-block";
+});
+
+updateSaveState();
 
 // Reflect saved settings in the form on page load (the browser can reopen this page anytime)
 chrome.storage.local.get(SETTINGS_KEY, (data) => {
   const saved = data[SETTINGS_KEY];
   if (!saved || saved.v !== SETTINGS_VERSION) {
     setStatus("info", "No settings saved yet — cloud mode in use.");
+    updateSaveState();
     return;
   }
   modeSelect.value = saved.mode;
@@ -195,8 +287,10 @@ chrome.storage.local.get(SETTINGS_KEY, (data) => {
   flavorSelect.value = saved.flavor || "openai";
   endpointInput.value = saved.endpoint || "";
   apiKeyInput.value = saved.apiKey || "";
+  setThinkOptions(saved.think);
   setModelOptions(saved.model ? [saved.model] : [], saved.model);
   showSections();
+  updateSaveState(); // loaded values count as untested, so API/Local start with Save locked
   setStatus("ok", "Saved settings loaded — mode: " + modeLabel(saved.mode) + ".");
 
   // Refresh the model dropdown straight from the server when possible
@@ -246,6 +340,8 @@ saveButton.addEventListener("click", () => {
     }
     const settings = { v: SETTINGS_VERSION, mode, flavor: flavorSelect.value, endpoint, model };
     if (apiKey) settings.apiKey = apiKey;
+    const think = THINK_VALUES.includes(thinkSelect.value) ? thinkSelect.value : "none";
+    if (think !== "none") settings.think = think;
     requestEndpointAccess(endpoint, (granted) => {
       if (granted) persist(settings);
     });
@@ -269,6 +365,10 @@ testButton.addEventListener("click", () => {
 
   requestEndpointAccess(needsEndpoint ? cfg.endpoint : "", (granted) => {
     if (!granted) return;
+    // A new test starts from "not verified": if it fails, Save must end up locked even
+    // when an earlier Test had passed for these same fields - PreYem
+    verifiedKey = null;
+    updateSaveState();
     setStatus("warn", "Testing connection…");
 
     fetch(modelListUrl(cfg), { headers: modelHeaders(cfg) })
@@ -279,6 +379,10 @@ testButton.addEventListener("click", () => {
               const ids = parseModelIds(json);
               if (ids.length) {
                 setModelOptions(ids, cfg.model);
+                // Verified for the fields as they were at click time: if the user edited
+                // anything while the request ran, the keys differ and Save stays locked
+                verifiedKey = connectionKey(cfg);
+                updateSaveState();
                 setStatus("ok", "Connected — " + ids.length + (ids.length === 1 ? " model" : " models") + " found. Pick one, then Save.");
               } else {
                 setStatus("warn", "Server answered but no models were listed — check the flavor/provider.");

@@ -6,88 +6,105 @@
     <link rel="stylesheet" href="tailwind.css" />
     <title>Reddit Summarizer</title>
   </head>
-  <body class="w-150 bg-[#1a1a1b] text-[#d7dadc] font-sans m-0 p-0">
-    <div class="flex flex-col gap-3 p-[18px_16px_14px]">
+  <body class="w-[400px] bg-[#1a1a1b] text-[#d7dadc] font-sans antialiased m-0 p-0">
+    <div class="flex flex-col gap-3.5 p-4">
       <!-- Header -->
-      <div class="flex items-baseline justify-between">
-        <h1 class="text-[15px] font-bold text-[#ff4500]">Reddit Summarizer</h1>
-        <span class="text-[10px] text-white/20">v1.7.0</span>
-      </div>
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff4500] text-white">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </span>
+          <h1 class="text-[15px] font-bold leading-none text-[#ff4500]">Reddit Summarizer</h1>
+        </div>
+        <span class="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/35">v1.7.0</span>
+      </header>
 
       <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
         Open any Reddit text post and click
-        <strong class="text-[#ff4500] font-semibold">AI Summary</strong>
-        button to get a concise breakdown of the post along with the most relevant insights from the top comments.
+        <strong class="font-semibold text-[#ff4500]">AI Summary</strong>
+        to get a concise breakdown of the post along with the most relevant insights from the top comments.
       </p>
 
-      <div class="h-px bg-white/[0.07]"></div>
-
-      <!-- Status -->
-      <div class="flex items-center gap-1.75 text-[11.5px] text-[#46d160]">
-        <span class="w-1.75 h-1.75 bg-[#46d160] rounded-full shrink-0"></span>
-        Active on Reddit
-      </div>
-
-      <div class="flex items-center gap-1 text-[11px] text-white/45">
-        <span class="w-1.5 h-1.5 bg-[#3988ff] rounded-full shrink-0"></span>
+      <!-- Status + settings -->
+      <div class="flex items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
+        <div class="flex items-center gap-2 text-[12px] text-[#46d160]">
+          <span class="relative flex h-2 w-2 shrink-0">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#46d160] opacity-60 motion-reduce:animate-none"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-[#46d160]"></span>
+          </span>
+          Active on Reddit
+        </div>
         <a
           href="settings.html"
           target="_blank"
           rel="noopener"
-          class="text-[#3988ff] no-underline hover:underline"
-          >Open AI Settings</a
+          class="flex items-center gap-1.5 rounded-md border border-[#3988ff]/40 bg-[#3988ff]/15 px-2.5 py-1 text-[11.5px] font-semibold text-[#d7dadc] no-underline transition-colors duration-150 hover:bg-[#3988ff]/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff]"
         >
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+          </svg>
+          AI Settings
+        </a>
       </div>
 
-      <div class="h-px bg-white/[0.07]"></div>
-
-      <!-- Declared Limitations -->
-      <div class="py-1">
-        <p class="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[#ff4500]">⚠️ Currently Known Limitations</p>
-        <ul class="flex list-disc flex-col gap-1.5 pl-4">
-          <li class="text-xs leading-relaxed text-white/55">
-            The AI runs on a free tier, meaning high traffic may cause temporary failures. Try again later.
+      <!-- Declared limitations -->
+      <section class="rounded-lg border border-[#ff4500]/20 bg-[#ff4500]/[0.06] px-3 py-2.5">
+        <p class="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#ff4500]">⚠️ Known limitations</p>
+        <ul class="flex list-disc flex-col gap-1.5 pl-4 marker:text-[#ff4500]/60">
+          <li class="text-[11.5px] leading-relaxed text-white/60">
+            <span class="font-semibold text-white/75">Cloud mode:</span> the AI runs on a free tier, so high traffic may cause temporary failures.
+            Try again later.
           </li>
-          <li class="text-xs leading-relaxed text-white/55">
-            The backend is hosted on Render's free tier. If unused for 15-20 min, the first request may fail but should be back online in under 1-2
-            minutes.
+          <li class="text-[11.5px] leading-relaxed text-white/60">
+            <span class="font-semibold text-white/75">Cloud mode:</span> the backend sleeps after 15-20 minutes without use, so the first request may
+            fail and should work again within 1-2 minutes. Local and own-key modes aren't affected.
           </li>
-          <li class="text-xs leading-relaxed text-white/55">
-            Media content (videos, images, GIFs) are excluded from summaries to keep responses fast and reduce AI token usage.
+          <li class="text-[11.5px] leading-relaxed text-white/60">
+            Media content (videos, images, GIFs) is left out of summaries to keep responses fast and reduce token usage.
           </li>
-          <li class="text-xs leading-relaxed text-white/55">
-            This extension is still in development, if you found a bug, feel free to
+          <li class="text-[11.5px] leading-relaxed text-white/60">
+            Still in development. Found a bug?
             <a
               href="https://github.com/PreYem/reddit-summarizer-preyem/issues"
-              class="text-[#ff4500] no-underline hover:underline"
               target="_blank"
               rel="noopener"
-              >report it on GitHub.</a
+              class="text-[#ff4500] no-underline hover:underline"
+              >Report it on GitHub.</a
             >
           </li>
         </ul>
-      </div>
+      </section>
 
-      <!-- Donation Link -->
+      <!-- Donation link -->
       <a
         href="https://paypal.me/preyem"
         target="_blank"
         rel="noopener"
-        class="group flex items-center justify-between gap-3 rounded-lg border border-[#3988ff]/40 bg-[#3988ff]/10 px-3 py-3 no-underline transition-colors duration-150 hover:bg-[#3988ff]/16"
+        class="group flex items-center justify-between gap-3 rounded-lg border border-[#3988ff]/40 bg-[#3988ff]/10 px-3 py-3 no-underline transition-colors duration-150 hover:bg-[#3988ff]/[0.16] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff]"
       >
-        <!-- PayPal icon -->
         <span class="flex items-center gap-3">
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3988ff]/15">
-            <img src="https://cdn.simpleicons.org/paypal/3988ff" width="16" height="16" alt="" />
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3988ff]/15 text-[#3988ff]">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
           </span>
-          <span class="flex flex-col">
+          <span class="flex flex-col gap-0.5">
             <span class="text-[12.5px] font-semibold text-[#d7dadc]">Found this extension helpful?</span>
-            <span class="text-[10.5px] text-white/45">
-              Optional contributions help support future updates and keep the extension available for free.
+            <span class="text-[10.5px] leading-snug text-white/45">
+              Optional contributions help support future updates and keep the extension free.
             </span>
           </span>
         </span>
-
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -106,28 +123,19 @@
 
       <div class="h-px bg-white/[0.07]"></div>
 
-      <!-- Footer containing socials -->
-      <div class="flex items-center justify-between">
-        <span class="text-[11px] text-white/25">Extension made by PreYem</span>
+      <!-- Footer / socials -->
+      <footer class="flex items-center justify-between">
+        <span class="text-[11px] text-white/30">Extension made by PreYem</span>
         <div class="flex items-center gap-3">
           <a
             href="https://preyem.me/"
             target="_blank"
             rel="noopener"
             title="Portfolio"
-            class="flex items-center text-white/25 transition-colors duration-150 hover:text-[#4a9eff]"
+            aria-label="Portfolio"
+            class="flex items-center text-white/30 transition-colors duration-150 hover:text-[#4a9eff]"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
@@ -137,7 +145,8 @@
             target="_blank"
             rel="noopener"
             title="GitHub"
-            class="flex items-center text-white/25 transition-colors duration-150 hover:text-[#e6edf3]"
+            aria-label="GitHub"
+            class="flex items-center text-white/30 transition-colors duration-150 hover:text-[#e6edf3]"
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path
@@ -150,7 +159,8 @@
             target="_blank"
             rel="noopener"
             title="GitLab"
-            class="flex items-center text-white/25 transition-colors duration-150 hover:text-[#ff4500]"
+            aria-label="GitLab"
+            class="flex items-center text-white/30 transition-colors duration-150 hover:text-[#ff4500]"
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path
@@ -159,7 +169,7 @@
             </svg>
           </a>
         </div>
-      </div>
+      </footer>
     </div>
   </body>
 </html>

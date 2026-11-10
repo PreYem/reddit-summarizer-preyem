@@ -1,8 +1,8 @@
 // Page where we inject AI Summary button, scrape the post content and send it to the backs
 
-import { fetchSummary } from "./api";
+import { fetchSummary, cancelInFlight, cancelStaleCall } from "./api";
 import { createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./summaryModal";
-import { LocalSummarizeError } from "./localLlm";
+import { CancelledError, LocalSummarizeError } from "./localLlm";
 
 // Function to scrab the post for data processing to be sent to the backend - PreYem
 function scrapePost() {
@@ -109,6 +109,13 @@ function inject(insertParent: Element, refChild: Node | null) {
         // Opening the summary modal with the summary data coming from the backend - PreYem
         showModal(summary, data.author); // Pass author here
       } catch (error) {
+        // #20 cancellation (page left / URL changed mid-flight): stay silent, the
+        // request was intentionally stopped — not a user-facing failure - PreYem
+        if (error instanceof CancelledError) {
+          setButtonState(injectedSummaryButton, "idle");
+          liveRegion.textContent = "";
+          return;
+        }
         // In case errors come up during backend call - PreYem
         console.error("[RS] Error:", error);
         // #18 local path: local failures carry a user-facing message (retry policy already ran
@@ -119,11 +126,8 @@ function inject(insertParent: Element, refChild: Node | null) {
           ? error.message
           : "Failed to summarize. Backend server issue, try again later.";
 
-        // Reverting button to it's original state in case there was an issue - PreYem
-        setTimeout(() => {
-          setButtonState(injectedSummaryButton, "idle");
-          liveRegion.textContent = "";
-        }, 2000);
+        // #20: no auto-revert — the error stays on the button until the user retries
+        // (clicking/keyboard-activating again fires a fresh attempt) - PreYem
       }
     } finally {
       activating = false;
@@ -194,6 +198,16 @@ tryInject();
 // One MutationObserver drives all later injections: on slow connections the button is
 // injected as soon as the anchor lands (no fixed-time bet), and SPA navigation is covered
 // because body mutations accompany it and the callback re-checks the pathname - PreYem
+// #20 cancellation: a URL change mid-flight means the running call belongs to a post we
+// left (or back-nav happened), so CANCEL aborts it before re-checking the anchor - PreYem
 new MutationObserver(() => {
+  cancelStaleCall();
   tryInject();
 }).observe(document.body, { childList: true, subtree: true });
+
+// Tab close / unload / back-navigation away: pagehide is the last moment where messaging
+// still works, so abort any in-flight fetch there (the service worker itself survives the
+// page unload and can still answer CANCEL + abort its fetch) - PreYem
+window.addEventListener("pagehide", () => {
+  cancelInFlight();
+});

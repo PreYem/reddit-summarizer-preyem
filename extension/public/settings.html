@@ -6,13 +6,29 @@
     <link rel="stylesheet" href="tailwind.css" />
     <title>Reddit Summarizer Settings</title>
   </head>
-  <body class="w-full min-h-screen bg-[#1a1a1b] text-[#d7dadc] font-sans m-0 p-5">
-    <div class="flex flex-col gap-4">
+  <body class="m-0 min-h-screen w-full bg-[#1a1a1b] p-5 font-sans text-[#d7dadc] antialiased [color-scheme:dark]">
+    <main class="mx-auto flex w-full max-w-[560px] flex-col gap-5 py-4">
       <!-- Header -->
-      <div class="flex items-baseline justify-between">
-        <h1 class="text-[17px] font-bold text-[#ff4500]">Reddit Summarizer Settings</h1>
-        <span class="text-[10px] text-white/20">v1.7.0</span>
-      </div>
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ff4500] text-white">
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </span>
+          <h1 class="text-[18px] font-bold leading-none text-[#ff4500]">Reddit Summarizer Settings</h1>
+        </div>
+        <span class="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/35">v1.7.0</span>
+      </header>
 
       <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
         Choose where summaries come from: the cloud backend (default), your AI Cloud Provider key (OpenAI, Anthropic or any OpenAI-compatible
@@ -20,108 +36,295 @@
         restarts.
       </p>
 
-      <!-- Source -->
-      <div class="flex flex-col gap-1.5">
-        <label class="text-[12.5px] font-semibold" for="rs-mode">Source</label>
-        <select id="rs-mode" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2">
-          <option value="cloud">Cloud — built-in backend</option>
-          <option value="api">AI Cloud Provider key</option>
-          <option value="local">Local server — nothing leaves your machine</option>
-        </select>
-      </div>
+      <!-- Settings card. Section blocks keep "hidden flex flex-col" exactly as before,
+           settings.js decides which ones show per source - PreYem -->
+      <section class="flex flex-col gap-5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-5">
+        <!-- Source -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-mode">Source</label>
+          <p class="text-[11px] text-white/40">Where summaries are generated.</p>
+          <div class="relative">
+            <select
+              id="rs-mode"
+              class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
+            >
+              <option value="cloud">Cloud — built-in backend</option>
+              <option value="api">AI Cloud Provider key</option>
+              <option value="local">Local server — nothing leaves your machine</option>
+            </select>
+            <svg
+              class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+        </div>
 
-      <!-- AI Cloud Provider section: provider only -->
-      <div id="sec-api" hidden class="flex flex-col gap-1.5">
-        <label class="text-[12.5px] font-semibold" for="rs-provider">Provider</label>
-        <select id="rs-provider" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2">
-          <option value="openai">OpenAI — api.openai.com</option>
-          <option value="anthropic">Anthropic — api.anthropic.com</option>
-          <option value="other">Other (OpenAI-compatible) — custom URL</option>
-        </select>
-      </div>
+        <!-- AI Cloud Provider section: provider only -->
+        <div id="sec-api" hidden class="flex flex-col gap-1.5">
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-provider">Provider</label>
+          <div class="relative">
+            <select
+              id="rs-provider"
+              class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
+            >
+              <option value="openai">OpenAI — api.openai.com</option>
+              <option value="anthropic">Anthropic — api.anthropic.com</option>
+              <option value="other">Other (OpenAI-compatible) — custom URL</option>
+            </select>
+            <svg
+              class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+        </div>
 
-      <!-- Local section: flavor only -->
-      <div id="sec-local" hidden class="flex flex-col gap-1.5">
-        <label class="text-[12.5px] font-semibold" for="rs-flavor">API flavor</label>
-        <select id="rs-flavor" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2">
-          <option value="openai">openai — /v1/chat/completions (LM Studio, llama.cpp, vLLM)</option>
-          <option value="ollama">ollama — /api/chat (native)</option>
-        </select>
-      </div>
+        <!-- Local section: flavor only -->
+        <div id="sec-local" hidden class="flex flex-col gap-1.5">
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-flavor">API flavor</label>
+          <div class="relative">
+            <select
+              id="rs-flavor"
+              class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
+            >
+              <option value="openai">openai — /v1/chat/completions (LM Studio, llama.cpp, vLLM)</option>
+              <option value="ollama">ollama — /api/chat (native)</option>
+            </select>
+            <svg
+              class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+        </div>
 
-      <!-- Endpoint: OpenAI-compatible custom + local servers -->
-      <div id="sec-server" hidden class="flex flex-col gap-1.5">
-        <label class="text-[12.5px] font-semibold" for="rs-endpoint">Endpoint URL</label>
-        <input
-          id="rs-endpoint"
-          type="text"
-          class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2"
-          placeholder="http://localhost:1234/v1"
-        />
-      </div>
+        <!-- Endpoint: OpenAI-compatible custom + local servers -->
+        <div id="sec-server" hidden class="flex flex-col gap-1.5">
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-endpoint">Endpoint URL</label>
+          <input
+            id="rs-endpoint"
+            type="text"
+            spellcheck="false"
+            class="w-full rounded-md border border-white/10 bg-[#232328] px-3 py-2 text-[13px] text-[#d7dadc] outline-none transition-colors placeholder:text-white/25 hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
+            placeholder="http://localhost:1234/v1"
+          />
+        </div>
 
-      <!-- Key: required for AI Cloud Provider, optional for local servers -->
-      <div id="sec-key" hidden class="flex flex-col gap-1.5">
-        <label class="text-[12.5px] font-semibold" for="rs-api-key">API key (required for AI Cloud Provider, optional for local servers)</label>
-        <input id="rs-api-key" type="password" autocomplete="off" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2" />
-      </div>
+        <!-- Key: required for AI Cloud Provider, optional for local servers -->
+        <div id="sec-key" hidden class="flex flex-col gap-1.5">
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-api-key">API key</label>
+          <p class="text-[11px] text-white/40">Required for AI Cloud Provider, optional for local servers. Stored only in this browser.</p>
+          <!-- The eye button sits inside the field on the right. Password inputs never render
+               their value, settings.js flips the same input's type password<->text - PreYem -->
+          <div class="relative">
+            <input
+              id="rs-api-key"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              class="w-full rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-10 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
+            />
+            <button
+              id="rs-key-eye"
+              type="button"
+              aria-label="Show or hide the API key"
+              class="absolute inset-y-0 right-0 flex cursor-pointer items-center rounded-r-md border-0 bg-transparent px-3 text-white/50 transition-colors hover:text-white/90 focus-visible:outline-2 focus-visible:outline-[#3988ff]"
+            >
+              <!-- Eye with the slash stacked on top of it. The slash span has no display class on
+                   purpose, so it keeps working however settings.js hides it (hidden attribute,
+                   hidden class or style.display) -->
+              <span class="relative block h-4 w-4">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  width="16"
+                  height="16"
+                  class="block"
+                >
+                  <path d="M2 12 Q7 5.5 12 5.5 Q17 5.5 22 12 Q17 18.5 12 18.5 Q7 18.5 2 12 Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <span id="rs-key-eye-slash" class="absolute inset-0">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    width="16"
+                    height="16"
+                    class="block"
+                  >
+                    <path d="M3 4 L21 20" />
+                  </svg>
+                </span>
+              </span>
+            </button>
+          </div>
+        </div>
 
-      <!-- Model: read from the server, never typed -->
-      <div id="sec-model" hidden class="flex flex-col gap-1.5">
-        <label class="text-[12.5px] font-semibold" for="rs-model">Model (read from your server)</label>
-        <select id="rs-model" class="w-full box-border rounded bg-[#232328] text-[#d7dadc] py-1 px-2"></select>
-        <p class="text-[10.5px] text-white/45">
-          The dropdown fills itself with your server's model list when the page opens; if it's empty, use Test connection.
+        <!-- Model: read from the server, never typed -->
+        <div id="sec-model" hidden class="flex flex-col gap-1.5">
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-model">Model</label>
+          <p class="text-[11px] text-white/40">Read from your server. If the list is empty, use Test connection.</p>
+          <div class="relative">
+            <select
+              id="rs-model"
+              class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
+            ></select>
+            <svg
+              class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Thinking: sits under the model. Local only; ollama gets only None/On options
+             (settings.js rebuilds the options per flavor, "On" stores low => think:true) - PreYem -->
+        <div id="sec-think" hidden class="flex flex-col gap-1.5">
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-think">Thinking</label>
+          <p class="text-[11px] text-white/40">Extra reasoning before answering. Off is fastest, and summaries rarely need it.</p>
+          <div class="relative">
+            <select
+              id="rs-think"
+              class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
+            >
+              <option value="none">None — off (Recommended)</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <svg
+              class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="h-px bg-white/[0.07]"></div>
+
+        <!-- Actions -->
+        <!-- Actions. Save starts disabled; settings.js enables it only after a passing Test (or in Cloud mode) - PreYem -->
+        <div class="flex gap-2.5">
+          <button
+            id="rs-save"
+            disabled
+            class="cursor-pointer rounded-md border border-[#3988ff] bg-[#3988ff] px-4 py-2 text-[12.5px] font-semibold text-white transition-colors enabled:hover:bg-[#4a95ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.06] disabled:text-white/30"
+          >
+            Save
+          </button>
+          <button
+            id="rs-test"
+            class="cursor-pointer rounded-md border border-[#ff4500]/50 bg-[#ff4500]/10 px-4 py-2 text-[12.5px] font-semibold text-[#d7dadc] transition-colors hover:bg-[#ff4500]/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff4500]"
+          >
+            Test connection
+          </button>
+        </div>
+        <p id="rs-save-hint" hidden class="-mt-2 text-[11px] text-white/40">Save unlocks after a successful Test connection.</p>
+
+        <!-- Status line: settings.js overwrites the paragraph's classes, so the box styling lives on the wrapper -->
+        <div class="rounded-md border border-white/[0.07] bg-black/20 px-3 py-2.5">
+          <p id="rs-status" class="text-[11.5px] leading-normal text-white/45">No settings saved yet — cloud mode in use.</p>
+        </div>
+      </section>
+
+      <!-- Setup tips: collapsed by default, no JS needed -->
+      <details class="group rounded-xl border border-[#ff4500]/20 bg-[#ff4500]/[0.06] px-4 py-3">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#ff4500] marker:hidden [&::-webkit-details-marker]:hidden"
+        >
+          Setup tips
+          <svg
+            class="transition-transform duration-150 group-open:rotate-180"
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </summary>
+        <ul class="mt-3 flex list-disc flex-col gap-2 pl-4 text-[11px] leading-relaxed text-[#ffb3a6] marker:text-[#ff4500]/60">
+          <li>
+            Chromium pre-allows localhost, 127.0.0.1, api.openai.com and api.anthropic.com; any other host asks once for permission on Save/Test.
+          </li>
+          <li>Ollama: start it with OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it, otherwise it answers 403.</li>
+          <li>
+            The prompt includes up to 100 comments — small context windows may choke small models (the extension retries once, then shows an error).
+          </li>
+          <li>
+            Thinking level: sent as reasoning_effort (LM Studio/llama.cpp) or think (Ollama). Ollama only supports off/on — Low/Medium/High aren't
+            offered there; servers that reject these fields are retried once without them.
+          </li>
+        </ul>
+      </details>
+
+      <!-- Footer -->
+      <footer class="flex flex-col gap-3">
+        <div class="h-px bg-white/[0.07]"></div>
+        <p class="text-[11px] leading-relaxed text-white/40">
+          Local mode talks only to your server: the post data never leaves your machine, no request logging and no quotas apply. The source code is
+          open:
+          <a
+            href="https://github.com/PreYem/reddit-summarizer-preyem"
+            target="_blank"
+            rel="noopener"
+            class="text-[#3988ff] no-underline hover:underline"
+            >github.com/PreYem/reddit-summarizer-preyem</a
+          >.
         </p>
-      </div>
-
-      <!-- Actions -->
-      <div class="flex gap-2">
-        <button
-          id="rs-save"
-          class="py-1 px-3 rounded bg-[#3988ff]/25 text-[#d7dadc] border border-[#3988ff]/40 text-[12px] font-semibold cursor-pointer"
-        >
-          Save
-        </button>
-        <button
-          id="rs-test"
-          class="py-1 px-3 rounded bg-[#ff4500]/15 text-[#d7dadc] border border-[#ff4500]/40 text-[12px] font-semibold cursor-pointer"
-        >
-          Test connection
-        </button>
-      </div>
-
-      <!-- Status line -->
-      <p id="rs-status" class="text-[11.5px] leading-normal text-white/45">No settings saved yet — cloud mode in use.</p>
-
-      <!-- Hints -->
-      <div class="flex flex-col gap-1.5 py-2 px-3 rounded-lg bg-[#ff4500]/8 text-[10.5px] leading-relaxed text-[#ffb3a6]">
-        <span class="block"
-          >Chromium pre-allows localhost, 127.0.0.1, api.openai.com and api.anthropic.com; any other host asks once for permission on Save/Test.</span
-        >
-        <span class="block"
-          >Ollama: start it with OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it, otherwise it answers 403.</span
-        >
-        <span class="block"
-          >The prompt includes up to 100 comments — small context windows may choke small models (the extension retries once, then shows an
-          error).</span
-        >
-      </div>
-
-      <div class="h-px bg-white/[0.07]"></div>
-
-      <p class="text-[11px] text-white/35">
-        Local mode talks only to your server: the post data never leaves your machine, no request logging and no quotas apply. The source code is
-        open:
-        <a
-          href="https://github.com/PreYem/reddit-summarizer-preyem"
-          target="_blank"
-          rel="noopener"
-          class="text-[#3988ff] no-underline hover:underline"
-          >github.com/PreYem/reddit-summarizer-preyem</a
-        >.
-      </p>
-    </div>
+      </footer>
+    </main>
 
     <script src="settings.js"></script>
   </body>
