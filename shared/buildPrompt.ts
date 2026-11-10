@@ -17,7 +17,7 @@ export function buildPrompt(data: { currentSubreddit: string; author: string; ti
     }
     HARD LENGTH LIMITS (non-negotiable, apply regardless of how long the input is):
     - Never scale the summary with the input: a long post must still produce a short summary. Compress, do not transcribe.
-    - "post": maximum 5 sentences (max 80 words), no matter how long the post body is. This is an absolute maximum — never go above it under any circumstance.
+    - "post": maximum 5 sentences (max 80 words), no matter how long the post body is. This is an absolute maximum - never go above it under any circumstance.
     - "community": maximum 3 sentences (max 30 words).
     - "communityReactionBreakdown": exactly 1 sentence (max 20 words).
     - "subredditDescription": maximum 1 sentence (max 12 words).
@@ -46,7 +46,7 @@ export function buildPrompt(data: { currentSubreddit: string; author: string; ti
 
     Important constraints:
     - Refer to the author as u/${data.author} at the start of the summary and refer to them as OP in future sentences.
-      Example: u/JohnDoe asks ..., then OP explains which is ... — always start with the u/ handle, then switch to OP.
+      Example: u/JohnDoe asks ..., then OP explains which is ... - always start with the u/ handle, then switch to OP.
     - If the author is [deleted], mention at the start that the OP deleted their account.
     - Do not invent details not present in title/body/comments
     - If comments are missing, use communityReaction "Inconclusive" and communityReactionBreakdown "There aren't enough comments for a valid breakdown."

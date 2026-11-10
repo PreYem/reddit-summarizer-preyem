@@ -31,9 +31,8 @@
       </header>
 
       <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
-        Choose where summaries come from: the cloud backend (default), your AI Cloud Provider key (OpenAI, Anthropic or any OpenAI-compatible
-        service), or a local server on your machine. Each source only shows the inputs it needs. Settings persist across sessions and browser
-        restarts.
+        Choose where summaries come from: the cloud backend (default), your AI Cloud Provider with your API key (OpenAI, Anthropic or any
+        OpenAI-compatible service), or a locally hosted model on your machine or network.
       </p>
 
       <!-- Settings card. Section blocks keep "hidden flex flex-col" exactly as before,
@@ -42,15 +41,15 @@
         <!-- Source -->
         <div class="flex flex-col gap-1.5">
           <label class="text-[12.5px] font-semibold text-white/85" for="rs-mode">Source</label>
-          <p class="text-[11px] text-white/40">Where summaries are generated.</p>
+          <p class="text-[11px] text-white/40">Where post date is sent to be summarized.</p>
           <div class="relative">
             <select
               id="rs-mode"
               class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
             >
-              <option value="cloud">Cloud — built-in backend</option>
-              <option value="api">AI Cloud Provider key</option>
-              <option value="local">Local server — nothing leaves your machine</option>
+              <option value="cloud">Reddit Summarizer's Backend - No setup is required</option>
+              <option value="api">Your AI Cloud Provider - Your Own API Key</option>
+              <option value="local">Locally LLM - Nothing leaves your machine</option>
             </select>
             <svg
               class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
@@ -70,15 +69,15 @@
 
         <!-- AI Cloud Provider section: provider only -->
         <div id="sec-api" hidden class="flex flex-col gap-1.5">
-          <label class="text-[12.5px] font-semibold text-white/85" for="rs-provider">Provider</label>
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-provider">Cloud Provider</label>
           <div class="relative">
             <select
               id="rs-provider"
               class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
             >
-              <option value="openai">OpenAI — api.openai.com</option>
-              <option value="anthropic">Anthropic — api.anthropic.com</option>
-              <option value="other">Other (OpenAI-compatible) — custom URL</option>
+              <option value="openai">OpenAI - api.openai.com</option>
+              <option value="anthropic">Anthropic - api.anthropic.com</option>
+              <option value="other">Other (OpenAI-compatible) - custom URL</option>
             </select>
             <svg
               class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
@@ -104,8 +103,8 @@
               id="rs-flavor"
               class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
             >
-              <option value="openai">openai — /v1/chat/completions (LM Studio, llama.cpp, vLLM)</option>
-              <option value="ollama">ollama — /api/chat (native)</option>
+              <option value="openai">openai - /v1/chat/completions (LM Studio, llama.cpp, vLLM)</option>
+              <option value="ollama">ollama - /api/chat (native)</option>
             </select>
             <svg
               class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
@@ -138,7 +137,10 @@
         <!-- Key: required for AI Cloud Provider, optional for local servers -->
         <div id="sec-key" hidden class="flex flex-col gap-1.5">
           <label class="text-[12.5px] font-semibold text-white/85" for="rs-api-key">API key</label>
-          <p class="text-[11px] text-white/40">Required for AI Cloud Provider, optional for local servers. Stored only in this browser.</p>
+          <p class="text-[11px] text-white/40">
+            Your API keys are never collected or stored by us. With cloud providers, your API key and post data are sent directly to your chosen
+            provider. With local models, all data stays on your machine.
+          </p>
           <!-- The eye button sits inside the field on the right. Password inputs never render
                their value, settings.js flips the same input's type password<->text - PreYem -->
           <div class="relative">
@@ -226,7 +228,7 @@
               id="rs-think"
               class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
             >
-              <option value="none">None — off (Recommended)</option>
+              <option value="none">None - off (Recommended)</option>
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
@@ -265,12 +267,17 @@
           >
             Test connection
           </button>
+          <button
+            id="rs-reset"
+            class="cursor-pointer rounded-md border border-white/15 bg-white/[0.06] px-4 py-2 text-[12.5px] font-semibold text-[#d7dadc] transition-colors hover:bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff]"
+          >
+            Reset
+          </button>
         </div>
-        <p id="rs-save-hint" hidden class="-mt-2 text-[11px] text-white/40">Save unlocks after a successful Test connection.</p>
 
         <!-- Status line: settings.js overwrites the paragraph's classes, so the box styling lives on the wrapper -->
         <div class="rounded-md border border-white/[0.07] bg-black/20 px-3 py-2.5">
-          <p id="rs-status" class="text-[11.5px] leading-normal text-white/45">No settings saved yet — cloud mode in use.</p>
+          <p id="rs-status" class="text-[11.5px] leading-normal text-white/45">No settings saved yet - cloud mode in use.</p>
         </div>
       </section>
 
@@ -300,10 +307,10 @@
           </li>
           <li>Ollama: start it with OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it, otherwise it answers 403.</li>
           <li>
-            The prompt includes up to 100 comments — small context windows may choke small models (the extension retries once, then shows an error).
+            The prompt includes up to 100 comments - small context windows may choke small models (the extension retries once, then shows an error).
           </li>
           <li>
-            Thinking level: sent as reasoning_effort (LM Studio/llama.cpp) or think (Ollama). Ollama only supports off/on — Low/Medium/High aren't
+            Thinking level: sent as reasoning_effort (LM Studio/llama.cpp) or think (Ollama). Ollama only supports off/on - Low/Medium/High aren't
             offered there; servers that reject these fields are retried once without them.
           </li>
         </ul>

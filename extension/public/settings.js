@@ -6,7 +6,9 @@
 // v2 schema: three sources — cloud | api (own provider key) | local (own server).
 
 const SETTINGS_KEY = "rs_settings";
-const SETTINGS_VERSION = 2;
+// v3: per-source slots — every provider/flavor combo keeps its own endpoint/key/model/think,
+// so switching source on the page (or after saving) repopulates THAT source's fields - PreYem
+const SETTINGS_VERSION = 3;
 
 const modeSelect = document.getElementById("rs-mode");
 const providerSelect = document.getElementById("rs-provider");
@@ -29,6 +31,11 @@ const sections = {
   model: document.getElementById("sec-model"),
   think: document.getElementById("sec-think"),
 };
+const resetButton = document.getElementById("rs-reset");
+
+// Slots shape: { "api:openai": {apiKey, model}, "api:other": {endpoint, apiKey, model},
+// "local:ollama": {endpoint, apiKey?, model, think?}, ... } + activeKey = last saved source - PreYem
+let savedSlots = {};
 
 // #19 thinking level: missing/invalid storage value means "none" (no schema bump) - PreYem
 const THINK_VALUES = ["none", "low", "medium", "high"];
@@ -40,11 +47,11 @@ function setThinkOptions(preferred) {
   const options =
     flavorSelect.value === "ollama"
       ? [
-          ["none", "None — off (Recommended)"],
-          ["low", "On — thinking enabled"],
+          ["none", "None - off (Recommended)"],
+          ["low", "On - thinking enabled"],
         ]
       : [
-          ["none", "None — off (Recommended)"],
+          ["none", "None - off (Recommended)"],
           ["low", "Low"],
           ["medium", "Medium"],
           ["high", "High"],
@@ -90,6 +97,9 @@ function showSections() {
   sections.key.hidden = mode === "cloud";
   sections.model.hidden = mode === "cloud";
   sections.think.hidden = mode !== "local";
+  // #23: Cloud's built-in backend has nothing to ping, so the Test button disappears
+  // there — it shows again whenever the user picks their own provider or local server - PreYem
+  testButton.hidden = mode === "cloud";
 }
 
 function formConfig() {
@@ -122,9 +132,14 @@ function connectionKey(cfg) {
 function updateSaveState() {
   const cfg = formConfig();
   const allowed = cfg.mode === "cloud" || verifiedKey === connectionKey(cfg);
+
   saveButton.disabled = !allowed;
   saveButton.title = allowed ? "" : "Run Test connection successfully first";
-  saveHint.hidden = allowed;
+
+  // The hint element is optional in the settings HTML.
+  if (saveHint) {
+    saveHint.hidden = allowed;
+  }
 }
 
 // An edit that locks Save also clears the stale "Connected" message so the page doesn't contradict itself
@@ -132,7 +147,7 @@ function onConnectionEdit() {
   const wasEnabled = !saveButton.disabled;
   updateSaveState();
   if (wasEnabled && saveButton.disabled) {
-    setStatus("info", "Connection settings changed — run Test connection to enable Save.");
+    setStatus("info", "Connection settings changed - Test the  connection to enable Save.");
   }
 }
 
@@ -219,8 +234,15 @@ function fetchModelIds(cfg, callback) {
     .catch(() => callback([]));
 }
 
-// Manifest pre-grants these origins, so a permission prompt is only needed for others
-const PRE_GRANTED = ["http://localhost/*", "http://127.0.0.1/*", "https://api.openai.com/*", "https://api.anthropic.com/*"];
+// Manifest pre-grants only these origins; OpenAI/Anthropic are NOT in host_permissions, so
+// #23 they go through the optional-host permission prompt instead of faking a grant - PreYem
+const PRE_GRANTED = ["http://localhost/*", "http://127.0.0.1/*"];
+
+// Built-in base for the named API providers (used to request access for their origin)
+function providerEndpoint(cfg) {
+  if (cfg.mode !== "api" || cfg.provider === "other") return "";
+  return cfg.provider === "anthropic" ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1";
+}
 
 function originPattern(endpoint) {
   const url = new URL(endpoint);
@@ -248,18 +270,55 @@ function requestEndpointAccess(endpoint, callback) {
   });
 }
 
+// v3: the Save button stores per-source slots ({api:openai: {...}, local:ollama: {...}})
+// plus the activeKey, so switching provider/flavor restores THAT source's own fields
+// (a saved OpenAI key never gets clobbered by an Anthropic key or a local URL) - PreYem
+function currentKey() {
+  if (modeSelect.value === "api") return "api:" + providerSelect.value;
+  if (modeSelect.value === "local") return "local:" + flavorSelect.value;
+  return "cloud";
+}
+
 function persist(settings) {
-  chrome.storage.local.set({ [SETTINGS_KEY]: settings }, () => {
+  const key = settings.mode === "cloud" ? "cloud" : settings.mode + ":" + (settings.mode === "api" ? settings.provider : settings.flavor);
+  const slots = Object.assign({}, savedSlots);
+  const slot = Object.assign({}, settings);
+  delete slot.v;
+  slots[key] = slot;
+  chrome.storage.local.set({ [SETTINGS_KEY]: { v: SETTINGS_VERSION, activeKey: key, slots } }, () => {
+    savedSlots = slots;
     setStatus("ok", "Saved. These persist across sessions and browser restarts.");
   });
 }
 
-modeSelect.addEventListener("change", showSections);
-providerSelect.addEventListener("change", showSections);
-// Rebuilding the thinking dropdown when the flavor changes (ollama = None/On only) - PreYem
+// #21 repopulate the visible form from the slot of the currently selected source, so
+// switching Source/Provider/API flavor shows that source's own saved key/URL/model - PreYem
+function applySlot() {
+  const slot = savedSlots[currentKey()] || {};
+  endpointInput.value = slot.endpoint || "";
+  apiKeyInput.value = slot.apiKey || "";
+  setThinkOptions(slot.think);
+  setModelOptions(slot.model ? [slot.model] : [], slot.model);
+  const cfg = formConfig();
+  if (cfg.mode !== "cloud" && isValidEndpoint(cfg.endpoint)) {
+    fetchModelIds(cfg, (ids) => {
+      if (ids.length) setModelOptions(ids, slot.model || cfg.model);
+    });
+  }
+}
+
+modeSelect.addEventListener("change", () => {
+  showSections();
+  applySlot();
+});
+providerSelect.addEventListener("change", () => {
+  showSections();
+  applySlot();
+});
+// Flavor change rebuilds the thinking dropdown (ollama = None/On only) via applySlot - PreYem
 flavorSelect.addEventListener("change", () => {
   showSections();
-  setThinkOptions(thinkSelect.value);
+  applySlot();
 });
 
 // Eye toggle: password inputs never render their typed value, so the button flips the
@@ -272,31 +331,39 @@ keyEyeButton.addEventListener("click", () => {
   keyEyeSlash.style.display = revealed ? "none" : "inline-block";
 });
 
+showSections();
 updateSaveState();
 
 // Reflect saved settings in the form on page load (the browser can reopen this page anytime)
 chrome.storage.local.get(SETTINGS_KEY, (data) => {
   const saved = data[SETTINGS_KEY];
   if (!saved || saved.v !== SETTINGS_VERSION) {
-    setStatus("info", "No settings saved yet — cloud mode in use.");
+    setStatus("info", "No settings saved yet - cloud mode in use.");
+    showSections();
     updateSaveState();
     return;
   }
-  modeSelect.value = saved.mode;
-  providerSelect.value = saved.provider || "openai";
-  flavorSelect.value = saved.flavor || "openai";
-  endpointInput.value = saved.endpoint || "";
-  apiKeyInput.value = saved.apiKey || "";
-  setThinkOptions(saved.think);
-  setModelOptions(saved.model ? [saved.model] : [], saved.model);
+  savedSlots = saved.slots || {};
+  const activeKey = saved.activeKey || "cloud";
+  const parts = activeKey.split(":");
+  if (parts[0] === "api") {
+    modeSelect.value = "api";
+    providerSelect.value = parts[1] || "openai";
+  } else if (parts[0] === "local") {
+    modeSelect.value = "local";
+    flavorSelect.value = parts[1] || "openai";
+  } else {
+    modeSelect.value = "cloud";
+  }
+  applySlot();
   showSections();
   updateSaveState(); // loaded values count as untested, so API/Local start with Save locked
-  setStatus("ok", "Saved settings loaded — mode: " + modeLabel(saved.mode) + ".");
+  setStatus("ok", "Saved settings loaded - mode: " + modeLabel(modeSelect.value) + ".");
 
   // Refresh the model dropdown straight from the server when possible
-  if (saved.mode !== "cloud" && isValidEndpoint(endpointInput.value)) {
+  if (modeSelect.value !== "cloud" && isValidEndpoint(endpointInput.value)) {
     fetchModelIds(formConfig(), (ids) => {
-      if (ids.length) setModelOptions(ids, saved.model);
+      if (ids.length) setModelOptions(ids, savedSlots[activeKey] && savedSlots[activeKey].model);
     });
   }
 });
@@ -318,12 +385,12 @@ saveButton.addEventListener("click", () => {
       return;
     }
     if (!model) {
-      setStatus("error", "Pick a model from the dropdown — run Test connection to load the list first.");
+      setStatus("error", "Pick a model from the dropdown - run Test connection to load the list first.");
       return;
     }
     const settings = { v: SETTINGS_VERSION, mode, provider, apiKey, model };
     if (provider === "other") settings.endpoint = endpoint;
-    requestEndpointAccess(provider === "other" ? endpoint : "", (granted) => {
+    requestEndpointAccess(provider === "other" ? endpoint : providerEndpoint({ mode, provider }), (granted) => {
       if (granted) persist(settings);
     });
     return;
@@ -335,7 +402,7 @@ saveButton.addEventListener("click", () => {
       return;
     }
     if (!model) {
-      setStatus("error", "Pick a model from the dropdown — run Test connection to load the list first.");
+      setStatus("error", "Pick a model from the dropdown - run Test connection to load the list first.");
       return;
     }
     const settings = { v: SETTINGS_VERSION, mode, flavor: flavorSelect.value, endpoint, model };
@@ -351,10 +418,29 @@ saveButton.addEventListener("click", () => {
   persist({ v: SETTINGS_VERSION, mode: "cloud" });
 });
 
-testButton.addEventListener("click", () => {
+// #21 Reset: clear the dynamic fields (endpoint, key, model, thinking) back to their
+// defaults and forget the saved slot for the CURRENT source — Source/Provider/API flavor
+// stay as chosen. Other sources' saved slots are left untouched - PreYem
+// #23: Guard the newest wiring so one bad element id can't stop the rest of the script
+if (resetButton)
+  resetButton.addEventListener("click", () => {
+    endpointInput.value = "";
+    apiKeyInput.value = "";
+    while (modelSelect.firstChild) modelSelect.removeChild(modelSelect.firstChild);
+    setThinkOptions(null); // rebuilds the dropdown for the current flavor, None selected
+    const key = currentKey();
+    const slots = Object.assign({}, savedSlots);
+    delete slots[key];
+    savedSlots = slots;
+    chrome.storage.local.set({ [SETTINGS_KEY]: { v: SETTINGS_VERSION, activeKey: key, slots } }, () => {
+      setStatus("info", "All fields reset to their defaults - nothing is saved for this source.");
+    });
+  });
+
+const runTestConnection = () => {
   const cfg = formConfig();
   if (cfg.mode === "cloud") {
-    setStatus("info", "Cloud mode uses the built-in backend — nothing to test here.");
+    setStatus("info", "Cloud mode uses the built-in backend - nothing to test here.");
     return;
   }
   const needsEndpoint = cfg.mode === "local" || cfg.provider === "other";
@@ -363,7 +449,7 @@ testButton.addEventListener("click", () => {
     return;
   }
 
-  requestEndpointAccess(needsEndpoint ? cfg.endpoint : "", (granted) => {
+  requestEndpointAccess(needsEndpoint ? cfg.endpoint : providerEndpoint(cfg), (granted) => {
     if (!granted) return;
     // A new test starts from "not verified": if it fails, Save must end up locked even
     // when an earlier Test had passed for these same fields - PreYem
@@ -383,12 +469,12 @@ testButton.addEventListener("click", () => {
                 // anything while the request ran, the keys differ and Save stays locked
                 verifiedKey = connectionKey(cfg);
                 updateSaveState();
-                setStatus("ok", "Connected — " + ids.length + (ids.length === 1 ? " model" : " models") + " found. Pick one, then Save.");
+                setStatus("ok", "Connected - " + ids.length + (ids.length === 1 ? " model" : " models") + " found. Pick one, then Save.");
               } else {
-                setStatus("warn", "Server answered but no models were listed — check the flavor/provider.");
+                setStatus("warn", "Server answered but no models were listed - check the flavor/provider.");
               }
             },
-            () => setStatus("warn", "Reached the server, but the model list isn't JSON — check the flavor/provider."),
+            () => setStatus("warn", "Reached the server, but the model list isn't JSON - check the flavor/provider."),
           );
         } else if (response.status === 403) {
           setStatus(
@@ -403,4 +489,14 @@ testButton.addEventListener("click", () => {
       })
       .catch(() => setStatus("error", "Not reachable: is the server running, and is the URL correct?"));
   });
+};
+
+// #23: A Test click must never fail silently — anything that throws shows up in the
+// status line instead of the button doing nothing - PreYem
+testButton.addEventListener("click", () => {
+  try {
+    runTestConnection();
+  } catch (error) {
+    setStatus("error", "Test connection hiccup: " + (error.message || String(error)));
+  }
 });

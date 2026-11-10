@@ -7,7 +7,9 @@ import type { SummarizeRequest, SummarizeResponse } from "../../shared/types";
 // the prompt byte-identical to the cloud path) - PreYem
 // NOTE: chrome.storage keys cannot contain dots, so plan #18's `rs.settings` is stored as `rs_settings`.
 export const SETTINGS_KEY = "rs_settings";
-export const SETTINGS_VERSION = 2;
+// #21 v3: { v, activeKey, slots } — each source ("api:openai", "local:ollama", ...) keeps
+// its own endpoint/key/model/think so switching sources never clobbers another's fields - PreYem
+export const SETTINGS_VERSION = 3;
 
 export interface LocalSettings {
   v: number;
@@ -25,10 +27,17 @@ export interface LocalSettings {
 const THINK_VALUES = ["none", "low", "medium", "high"];
 
 // Dedicated error type so content.ts can tell local/API failures (user-facing message)
-// apart from cloud backend failures (generic message) - PreYem
+// apart from cloud backend failures (generic message). #21: carries provider/model/kind so
+// the error modal can attribute the failure to the exact source it came from - PreYem
 export class LocalSummarizeError extends Error {
-  constructor(message: string) {
+  provider: string;
+  model: string;
+  kind: string;
+  constructor(message: string, provider: string, model: string, kind: string) {
     super(message);
+    this.provider = provider;
+    this.model = model;
+    this.kind = kind;
   }
 }
 
@@ -50,7 +59,8 @@ function isValidEndpoint(value: string | undefined): boolean {
   }
 }
 
-// Returns the saved settings when they match the current schema version, else null → cloud default
+// Returns the saved settings when they match the current schema version, else null → cloud default.
+// #21 v3: the active slot is expanded back into the flat LocalSettings the background expects - PreYem
 export function readSettings(): Promise<LocalSettings | null> {
   return new Promise((resolve) => {
     chrome.storage.local.get(SETTINGS_KEY, (data: any) => {
@@ -58,32 +68,60 @@ export function readSettings(): Promise<LocalSettings | null> {
         resolve(null);
         return;
       }
-      const saved = data[SETTINGS_KEY] as LocalSettings | undefined;
-      const modeOk = saved && (saved.mode === "cloud" || saved.mode === "api" || saved.mode === "local");
-      if (!saved || saved.v !== SETTINGS_VERSION || !modeOk) {
+      const saved = data[SETTINGS_KEY];
+      if (!saved || saved.v !== SETTINGS_VERSION) {
         resolve(null);
         return;
       }
-      if (saved.think !== undefined && THINK_VALUES.indexOf(saved.think) < 0) {
-        delete saved.think;
+      const activeKey = typeof saved.activeKey === "string" ? saved.activeKey : "";
+      const slot = saved.slots && typeof saved.slots === "object" ? saved.slots[activeKey] : null;
+      if (!slot) {
+        resolve(null);
+        return;
       }
-      if (saved.mode === "api") {
-        const providerOk = saved.provider === "openai" || saved.provider === "anthropic" || saved.provider === "other";
-        const endpointOk = saved.provider !== "other" || isValidEndpoint(saved.endpoint);
-        if (!providerOk || !saved.apiKey || !saved.model || !endpointOk) {
+      const settings: LocalSettings = {
+        v: SETTINGS_VERSION,
+        mode: slot.mode,
+        provider: slot.provider,
+        flavor: slot.flavor,
+        endpoint: slot.endpoint,
+        apiKey: slot.apiKey,
+        model: slot.model,
+        think: slot.think,
+      };
+      const modeOk = settings.mode === "cloud" || settings.mode === "api" || settings.mode === "local";
+      if (!modeOk) {
+        resolve(null);
+        return;
+      }
+      if (settings.think !== undefined && THINK_VALUES.indexOf(settings.think) < 0) {
+        delete settings.think;
+      }
+      if (settings.mode === "api") {
+        const providerOk = settings.provider === "openai" || settings.provider === "anthropic" || settings.provider === "other";
+        const endpointOk = settings.provider !== "other" || isValidEndpoint(settings.endpoint);
+        if (!providerOk || !settings.apiKey || !settings.model || !endpointOk) {
           resolve(null);
           return;
         }
       }
-      if (saved.mode === "local") {
-        if (!isValidEndpoint(saved.endpoint) || !saved.model) {
+      if (settings.mode === "local") {
+        if (!isValidEndpoint(settings.endpoint) || !settings.model) {
           resolve(null);
           return;
         }
       }
-      resolve(saved);
+      resolve(settings);
     });
   });
+}
+
+// Human label of the source a request went to, shown in the error modal - PreYem
+function providerLabel(settings: LocalSettings): string {
+  if (settings.mode === "local") {
+    return "Local server - " + (settings.flavor || "openai") + " @ " + (settings.endpoint || "");
+  }
+  return "AI Cloud Provider - " + (settings.provider || "openai");
 }
 
 // One round-trip to the background page (LOCAL_LLM). The prompt is built content-side
@@ -107,7 +145,12 @@ export async function summarizeLocally(settings: LocalSettings, data: SummarizeR
     throw new CancelledError(response.error);
   }
   if (!response.ok || !response.summary) {
-    throw new LocalSummarizeError(response.error || "Local request failed without a message from the server");
+    throw new LocalSummarizeError(
+      response.error || "Local request failed without a message from the server",
+      providerLabel(settings),
+      settings.model || "no model",
+      response.kind || "Request failed",
+    );
   }
   return response.summary as SummarizeResponse;
 }

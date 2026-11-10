@@ -36,11 +36,12 @@ export function createButton(): HTMLButtonElement {
 }
 
 // Updates the button's text and disabled state based on what's happening.
-export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "error", message?: string) {
+// #21: no error state anymore — failures get their own error modal instead, so the
+// button never gets stuck and stays clickable for a fresh attempt - PreYem
+export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading") {
   const labels = {
     idle: "AI Summary",
     loading: "Summarizing...",
-    error: message ?? "Failed to summarize | Backend server issue, try again later.",
   };
 
   if (state === "loading") {
@@ -49,12 +50,14 @@ export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading"
     const spinner = document.createElement("span");
     spinner.className = "rs-btn-spinner";
     btn.appendChild(spinner);
-    btn.appendChild(document.createTextNode(" Summarizing..."));
+    btn.appendChild(document.createTextNode(" Summarizing... (click to cancel)"));
   } else {
-    btn.textContent = labels[state] ?? "AI Summary";
+    btn.textContent = labels[state];
   }
 
-  btn.disabled = state === "loading" || state === "error";
+  // #22: never disabled while loading — clicking the busy button cancels the in-flight
+  // request (content.ts), which tells local servers to stop generating - PreYem
+  btn.disabled = false;
 }
 
 // Builds "<prefix><span class='rs-modal-subreddit'>subreddit</span><suffix>" safely,
@@ -220,6 +223,82 @@ export function showModal(summary: SummarizeResponse, author: string) {
 
   // ESC always closes the modal; named so repeated showModal calls never stack
   // duplicate listeners - PreYem
+  document.removeEventListener("keydown", onModalKeyDown);
+  document.addEventListener("keydown", onModalKeyDown);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => overlay.classList.add("rs-modal-visible"));
+  });
+}
+
+// #21 error modal: same shell as the summary modal (same overlay + entrance animation,
+// same ✕/overlay-click/ESC closes), only the content differs. Errors are never cached —
+// closing it leaves the button idle and clickable for a fresh attempt - PreYem
+export function showErrorModal(provider: string, model: string, kind: string, message: string): void {
+  document.querySelector(".rs-modal-backgroundOverlay")?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.className = "rs-modal-backgroundOverlay";
+  overlay.classList.add(getRedditTheme() === "dark" ? "rs-theme-dark" : "rs-theme-light");
+
+  const modal = document.createElement("div");
+  modal.className = "rs-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "rs-modal-title");
+
+  const header = document.createElement("div");
+  header.className = "rs-modal-header";
+
+  const title = document.createElement("span");
+  title.className = "rs-modal-title";
+  title.id = "rs-modal-title";
+  title.textContent = "AI Summary - Error";
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "rs-modal-close";
+  closeBtn.textContent = "\u2715";
+  closeBtn.setAttribute("aria-label", "Close AI summary error modal");
+  closeBtn.addEventListener("click", closeModal);
+
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+
+  const body = document.createElement("div");
+  body.className = "rs-modal-body";
+
+  const addSection = (label: string, text: string) => {
+    const section = document.createElement("div");
+    section.className = "rs-section";
+
+    const labelDiv = document.createElement("div");
+    labelDiv.className = "rs-section-label";
+    labelDiv.textContent = label;
+
+    const textP = document.createElement("p");
+    textP.className = "rs-section-text";
+    textP.textContent = text;
+
+    section.appendChild(labelDiv);
+    section.appendChild(textP);
+    body.appendChild(section);
+  };
+
+  addSection("Provider", provider);
+  addSection("Model", model);
+  addSection("Error type", kind);
+  addSection("Message", message);
+
+  modal.appendChild(header);
+  modal.appendChild(body);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeModal();
+  });
+
   document.removeEventListener("keydown", onModalKeyDown);
   document.addEventListener("keydown", onModalKeyDown);
 

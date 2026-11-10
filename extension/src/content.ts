@@ -1,7 +1,7 @@
 // Page where we inject AI Summary button, scrape the post content and send it to the backs
 
 import { fetchSummary, cancelInFlight, cancelStaleCall } from "./api";
-import { createButton, showModal, setButtonState, getCachedSummary, setCachedSummary } from "./summaryModal";
+import { createButton, showModal, showErrorModal, setButtonState, getCachedSummary, setCachedSummary } from "./summaryModal";
 import { CancelledError, LocalSummarizeError } from "./localLlm";
 
 // Function to scrab the post for data processing to be sent to the backend - PreYem
@@ -74,6 +74,13 @@ function inject(insertParent: Element, refChild: Node | null) {
   // The guard also swallows the UA-synthesized click that follows keyboard activation,
   // so a single key press never fires two backend calls - PreYem
   let activating = false;
+  // #22 click-to-cancel bookkeeping: a request is in flight (busy), the user asked for
+  // the cancel by clicking/Enter on the busy button (userCancel → the CancelledError
+  // catch acknowledges it instead of staying silent), and keyboardClickGuard swallows
+  // the UA-synthesized click that follows keyboard activation - PreYem
+  let busy = false;
+  let userCancel = false;
+  let keyboardClickGuard = false;
   const activate = async () => {
     if (activating) return;
     activating = true;
@@ -90,6 +97,7 @@ function inject(insertParent: Element, refChild: Node | null) {
       // If no cachedSummary is found, we call the backend and send the correct data.
       setButtonState(injectedSummaryButton, "loading");
       liveRegion.textContent = "Summarizing this post with AI";
+      busy = true;
 
       try {
         // Calling the scrap function to get the data then send it rather than scrap when page loads - PreYem
@@ -111,26 +119,31 @@ function inject(insertParent: Element, refChild: Node | null) {
       } catch (error) {
         // #20 cancellation (page left / URL changed mid-flight): stay silent, the
         // request was intentionally stopped — not a user-facing failure - PreYem
+        // #22: but a user-initiated click-cancel gets a polite acknowledgment in the
+        // live region so the page doesn't look like it silently dropped the click - PreYem
         if (error instanceof CancelledError) {
+          const cancelledByUser = userCancel;
+          userCancel = false;
           setButtonState(injectedSummaryButton, "idle");
-          liveRegion.textContent = "";
+          liveRegion.textContent = cancelledByUser ? "Summary cancelled. Click the button again to retry." : "";
           return;
         }
         // In case errors come up during backend call - PreYem
         console.error("[RS] Error:", error);
-        // #18 local path: local failures carry a user-facing message (retry policy already ran
-        // inside localLlm), cloud ones keep the generic backend text - PreYem
-        const localFailure = error instanceof LocalSummarizeError;
-        setButtonState(injectedSummaryButton, "error", localFailure ? error.message : undefined);
-        liveRegion.textContent = localFailure
-          ? error.message
-          : "Failed to summarize. Backend server issue, try again later.";
-
-        // #20: no auto-revert — the error stays on the button until the user retries
-        // (clicking/keyboard-activating again fires a fresh attempt) - PreYem
+        // #21: no error state on the button — the failure gets its own error modal (same
+        // animation + ESC close as the summary modal). Closing it leaves the button idle
+        // and clickable for a retry; errors are deliberately NOT cached in memory - PreYem
+        setButtonState(injectedSummaryButton, "idle");
+        liveRegion.textContent = "";
+        if (error instanceof LocalSummarizeError) {
+          showErrorModal(error.provider, error.model, error.kind, error.message);
+        } else {
+          showErrorModal("Cloud backend", "Backend server", "Backend error", error.message || "Failed to summarize | Backend server issue, try again later.");
+        }
       }
     } finally {
       activating = false;
+      busy = false;
     }
   };
 
@@ -139,6 +152,18 @@ function inject(insertParent: Element, refChild: Node | null) {
     event.stopPropagation();
     event.preventDefault();
     event.stopImmediatePropagation();
+    // The keyboard path's UA-synthesized click must never count as a real click - PreYem
+    if (keyboardClickGuard) {
+      keyboardClickGuard = false;
+      return;
+    }
+    // #22: a click while a request runs cancels it: CANCEL aborts the fetch, which
+    // tells local servers (Ollama, llama.cpp) to stop generating for the result - PreYem
+    if (busy) {
+      userCancel = true;
+      cancelInFlight();
+      return;
+    }
     void activate();
   });
 
@@ -146,6 +171,13 @@ function inject(insertParent: Element, refChild: Node | null) {
   injectedSummaryButton.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
+      if (busy) {
+        // #22: keyboard re-activation on a busy button cancels, same as clicking - PreYem
+        userCancel = true;
+        cancelInFlight();
+        return;
+      }
+      keyboardClickGuard = true;
       void activate();
     }
   });

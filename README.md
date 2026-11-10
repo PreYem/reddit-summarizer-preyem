@@ -120,10 +120,11 @@ The backend starts on `http://localhost:3000` and the extension dev server watch
 
 The settings page (the add-on's options page) opens from the popup's "Open AI Settings" link or from your browser's add-on manager (it no longer opens automatically on install):
 
-- **Source** — `Cloud` (default, the backend below), `AI Cloud Provider key` (OpenAI, Anthropic, or any OpenAI-compatible service at your own URL), or `Local server` (your own LLM — the post data never leaves your machine)
+- **Source** — `Cloud` (default, the backend below), `AI Cloud Provider` (OpenAI, Anthropic, or any OpenAI-compatible service at your own URL), or `Local server` (your own LLM — the post data never leaves your machine)
 - Each source shows only the inputs it needs; the **model dropdown is auto-detected** from your server's model list (`/models`, Anthropic `/v1/models`, Ollama `/api/tags`) — you never type a model name
 - **API key** is kept in extension storage only, sent as `Authorization: Bearer` (or `x-api-key` for Anthropic) to your configured provider and nowhere else
-- **Save** persists across sessions/browser restarts; **Test connection** pings the model-list route and refills the dropdown
+- **Save** persists across sessions/browser restarts; **Test connection** pings the model-list route and refills the dropdown (hidden in Cloud mode — nothing to ping); **Reset** clears the current source's fields (endpoint, key, model, thinking) back to their empty defaults
+- Each source (OpenAI, Anthropic, other-provider URL, each local flavor) keeps its **own saved slot** — switching Source/Provider/flavor restores that source's key, URL and model instead of losing or leaking another source's values
 - **Thinking level** (Local server only): None (default, off) / Low / Medium / High — sent as `reasoning_effort` to OpenAI-compatible servers (`reasoning_effort: "none"` + `chat_template_kwargs: {enable_thinking: false}` when off, for gpt-oss/Qwen3 templates), or as `think: true/false` to Ollama, where the dropdown only offers None/On since Ollama has no level granularity. Servers that reject these fields (HTTP 400) are retried once without them
 - An eye button under the **API key** reveals the typed key (it flips the field between password and plain text — you never retype); reveal state is not persisted and hides again on every page load
 - All non-cloud paths send the exact same prompt as cloud (same 5-key schema, both sides compile the shared `buildPrompt`), and the modal footer reads `Local | <model>` or `AI Cloud Provider | <model>`
@@ -133,8 +134,9 @@ Notes:
 - Requests run from the extension's own background page, so your server needs **no CORS headers** for the extension origin. In Chromium, `localhost`, `127.0.0.1`, `api.openai.com` and `api.anthropic.com` are pre-approved via `host_permissions`; any other host gets a one-time permission prompt on Save/Test (Chromium can't reach arbitrary LAN/IP hosts at all — Firefox can).
 - Ollama still checks request origins: start it with `OLLAMA_ORIGINS=chrome-extension://*,moz-extension://*` if it answers 403.
 - The prompt includes up to 100 comments — small context windows may choke small models; the extension retries once with a stricter JSON-only instruction, then shows the error toast (no silent cloud fallback).
-- If a call fails, the button keeps the error text (the provider's own message when it returns JSON, e.g. an Anthropic credit-balance error) until you click again — clicking retries; nothing auto-clears.
+- If a call fails, an **error modal** opens (same animation and ESC/✕ close as the summary modal) showing the provider, model, error type (e.g. `HTTP 400 · invalid_request_error`) and the provider's own message — nothing stays stuck on the button, and closing the modal makes it clickable again for a retry (errors are never cached, unlike summaries).
 - Any in-flight request is cancelled if you close the tab, navigate away, or leave the post mid-generation: the extension aborts the fetch, which tells local servers (Ollama, llama.cpp) to stop generating instead of finishing a response nobody will see (cloud calls get cut short too).
+- You can also cancel a running request yourself: while the button spins it reads `Summarizing... (click to cancel)` and stays clickable — clicking it (or pressing Enter again) aborts the fetch, so the local server stops generating right away and the button flips back to `AI Summary` for a retry.
 
 ---
 

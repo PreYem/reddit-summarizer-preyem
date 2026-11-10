@@ -15,7 +15,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })
       .then((response) => response.json())
       .then((json) => sendResponse({ ok: true, summary: json }))
-      .catch((error) => sendResponse({ ok: false, cancelled: error.name === "AbortError" || undefined, error: error.message }));
+      .catch((error) => sendResponse({ ok: false, cancelled: error.name === "AbortError" || undefined, error: error.message, kind: error.name === "AbortError" ? undefined : "Backend request failed" }));
 
     return true;
   }
@@ -115,7 +115,11 @@ async function callOnce(settings, prompt, stripThinking) {
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(serverErrorDetail(response.status, detail));
+    const server = serverErrorDetail(response.status, detail);
+    const error = new Error(server.message);
+    error.status = response.status;
+    error.kind = server.kind;
+    throw error;
   }
 
   const json = await response.json();
@@ -131,22 +135,31 @@ async function callOnce(settings, prompt, stripThinking) {
   return (message && (message.content || message.reasoning_content || message.reasoning)) || "";
 }
 
-// Server error bodies are usually JSON envelopes ({error:{message}} OpenAI-style or a
-// top-level {type,message} Anthropic-style): surface just the message text in the button
-// instead of a raw JSON dump - PreYem
+// #21 server error bodies are JSON envelopes ({error:{message,type,code}} OpenAI-style or
+// a top-level {type,message} Anthropic-style): split into a human message + an error-type
+// label so the error modal can show kind, provider, model and message separately - PreYem
 function serverErrorDetail(status, detail) {
   let message = detail;
+  let kind = "HTTP " + status;
   try {
     const json = JSON.parse(detail);
     if (json) {
       const inner = typeof json.error === "object" && json.error ? json.error : json;
       if (typeof inner.message === "string") message = inner.message;
+      const type =
+        typeof inner.type === "string"
+          ? inner.type
+          : typeof json.type === "string"
+            ? json.type
+            : typeof inner.code === "string"
+              ? inner.code
+              : null;
+      if (type) kind = "HTTP " + status + " \u00b7 " + type;
     }
   } catch (error) {
     // Not JSON — keep the raw text
   }
-  const trimmed = message.trim();
-  return "Server returned " + status + ": " + (trimmed.slice(0, 220) || "no detail");
+  return { message: message.trim().slice(0, 280) || "no detail", kind };
 }
 
 // Mirror of services/groq-ai-prompt.ts: tolerant slice-out + strict 5-key schema - PreYem
@@ -197,7 +210,8 @@ async function runCustomLlm(message, sendResponse) {
     try {
       raw = await callOnce(settings, message.prompt, stripped);
     } catch (error) {
-      if (settings.mode !== "local" || !/Server returned 400/.test(String(error.message))) throw error;
+      // error.status (not a string match) drives the one-thinking-strip retry - PreYem
+      if (settings.mode !== "local" || error.status !== 400) throw error;
       stripped = true;
       raw = await callOnce(settings, message.prompt, stripped);
     }
@@ -205,14 +219,21 @@ async function runCustomLlm(message, sendResponse) {
     if (!summary) summary = parseSummary(await callOnce(settings, message.prompt + RETRY_RULE, stripped));
 
     if (!summary) {
-      sendResponse({ ok: false, error: "Your model did not return valid summary JSON, try again or use another model." });
+      sendResponse({ ok: false, error: "Your model did not return valid summary JSON, try again or use another model.", kind: "Invalid model output" });
       return;
     }
 
-    summary.aiModel = (settings.mode === "local" ? "Local | " : "Your AI Cloud Provider | ") + settings.model;
+    summary.aiModel = (settings.mode === "local" ? "Your Local LLM | " : "Your AI Cloud Provider | ") + settings.model;
     sendResponse({ ok: true, summary });
   } catch (error) {
-    sendResponse({ ok: false, cancelled: error.name === "AbortError" || undefined, error: error.message || String(error) });
+    // #21 kind travels with the message so the error modal can label the failure type;
+    // fetch/connection failures come as TypeErrors with cryptic messages, so label those - PreYem
+    sendResponse({
+      ok: false,
+      cancelled: error.name === "AbortError" || undefined,
+      error: error.message || String(error),
+      kind: error.kind || (error.name === "AbortError" ? undefined : error.name === "TypeError" ? "Network / server unreachable" : "Request failed"),
+    });
   } finally {
     clearInterval(keepAlive);
   }

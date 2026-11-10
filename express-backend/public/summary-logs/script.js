@@ -18,7 +18,7 @@ const RANGE_DAYS = { "7d": 7, "30d": 30, "90d": 90 };
 async function fetchJson(url) {
   // Key is passed as a query param on every request, not via a header - PreYem
   const res = await fetch(`${url}?key=${encodeURIComponent(key)}`);
-  if (!res.ok) throw new Error(res.status === 403 ? "Forbidden — pass ?key=... in the URL" : `HTTP ${res.status}`);
+  if (!res.ok) throw new Error(res.status === 403 ? "Forbidden - pass ?key=... in the URL" : `HTTP ${res.status}`);
   return res.json();
 }
 
@@ -75,8 +75,8 @@ function renderKpis(stats) {
     ["Total words", stats.totalWords],
     ["Avg words", stats.avgWords],
     ["Max words", stats.maxWords],
-    ["First entry", stats.firstTimestamp ? fmtDate(stats.firstTimestamp) : "—"],
-    ["Last entry", stats.lastTimestamp ? fmtDate(stats.lastTimestamp) : "—"],
+    ["First entry", stats.firstTimestamp ? fmtDate(stats.firstTimestamp) : "-"],
+    ["Last entry", stats.lastTimestamp ? fmtDate(stats.lastTimestamp) : "-"],
   ];
   document.getElementById("kpis").innerHTML = kpis
     .map(([label, value]) => `<div class="kpi">
@@ -236,7 +236,7 @@ function safeUrl(url) {
   return null;
 }
 function titleCell(e) {
-  const title = escape(e.post?.title || "—");
+  const title = escape(e.post?.title || "-");
   const url = safeUrl(e.post?.postUrl);
   if (!url) return title;
   return `<a class="post-link" href="${escape(url)}" target="_blank" rel="noopener">${title}</a>`;
@@ -268,7 +268,7 @@ document.getElementById("clearBtn").addEventListener("click", async () => {
   if (!confirm("Clear the request log?")) return;
   try {
     const res = await fetch(`/summary-logs?key=${encodeURIComponent(key)}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(res.status === 403 ? "Forbidden — pass ?key=... in the URL" : `HTTP ${res.status}`);
+    if (!res.ok) throw new Error(res.status === 403 ? "Forbidden - pass ?key=... in the URL" : `HTTP ${res.status}`);
     await refresh();
   } catch (e) {
     console.error(e);

@@ -16,7 +16,7 @@ function debugResponse(payload: SummarizeRequest): SummarizeResponse {
   return {
     aiModel: "debug-static",
     subredditDescription: `r/${payload.currentSubreddit} is a test subreddit used in debug mode.`,
-    post: `[DEBUG] ${payload.title} — static placeholder body for ${payload.author}.`,
+    post: `[DEBUG] ${payload.title} - static placeholder body for ${payload.author}.`,
     community: "[DEBUG] Static community summary: top comments would normally be summarized here.",
     communityReaction: "Mixed",
     communityReactionBreakdown: "[DEBUG] Static breakdown text for the reaction section.",
