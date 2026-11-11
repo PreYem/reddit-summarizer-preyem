@@ -3,16 +3,29 @@ import { SummarizeResponse } from "@shared/types";
 
 // Caching the summary in memory per post, meaning clicking the AI Summary button and closing the modal and opening it again will bring the same response
 // without sending an API request a second time to avoid Token usage ramping up - PreYem
-const summaryCache = new Map<string, SummarizeResponse>();
+// #23: cache value also carries the wall-clock duration of the original fetch + the mode
+// it ran in, so a cached re-show can display the truthful footer of that call - PreYem
+// #24: cache value also carries a settings fingerprint (mode+model) so a cached summary is
+// only re-shown while the CURRENT settings match — after Save changes the source, the button
+// re-summarizes with the new settings instead of serving the stale cached modal - PreYem
+const summaryCache = new Map<string, { response: SummarizeResponse; elapsedMs: number; mode: string; settingsFingerprint: string }>();
 
-// Returns the cached summary for the current page URL, or null if there isn't one.
-export function getCachedSummary(): SummarizeResponse | null {
+export function getCachedSummary(): { response: SummarizeResponse; elapsedMs: number; mode: string; settingsFingerprint: string } | null {
   return summaryCache.get(window.location.href) ?? null;
 }
 
-// Saves a summary for the current page URL.
-export function setCachedSummary(summary: SummarizeResponse): void {
-  summaryCache.set(window.location.href, summary);
+export function setCachedSummary(summary: SummarizeResponse, elapsedMs: number, mode: string, settingsFingerprint: string): void {
+  summaryCache.set(window.location.href, { response: summary, elapsedMs, mode, settingsFingerprint });
+}
+
+// #23: "under a second" / "N second(s)" / "N min M s" formatting for the modal footer - PreYem
+function formatElapsed(ms: number): string {
+  if (ms < 1000) return "under a second";
+  const totalSeconds = Math.round(ms / 1000);
+  if (totalSeconds < 60) return `${totalSeconds} second${totalSeconds === 1 ? "" : "s"}`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return seconds ? `${minutes} min ${seconds} s` : `${minutes} min`;
 }
 
 // Fetching the current reddit theme for the modal to be adjusted accordingly - PreYem
@@ -37,23 +50,38 @@ export function createButton(): HTMLButtonElement {
 
 // Updates the button's text and disabled state based on what's happening.
 // #21: no error state anymore — failures get their own error modal instead, so the
-// button never gets stuck and stays clickable for a fresh attempt - PreYem
-export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading") {
+// button never gets stuck and stays clickable for a fresh attempt
+// #23: "done" state once the summary is in memory — the button then re-opens the
+// modal from cache instead of re-summarizing - PreYem
+export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "done") {
   const labels = {
     idle: "AI Summary",
     loading: "Summarizing...",
+    done: "Show Summary",
+  };
+  const ariaLabels = {
+    idle: "Summarize this Reddit post with AI",
+    loading: "Summarizing this post, click again to cancel",
+    done: "Show this post's AI summary",
   };
 
   if (state === "loading") {
-    // Safe: fully static markup, no dynamic values interpolated.
     btn.replaceChildren();
     const spinner = document.createElement("span");
     spinner.className = "rs-btn-spinner";
     btn.appendChild(spinner);
-    btn.appendChild(document.createTextNode(" Summarizing... (click to cancel)"));
+    btn.appendChild(document.createTextNode(" Summarizing..."));
+    // A nested <button> inside the <button> is invalid HTML, so the "✕ Cancel" affordance
+    // is a styled span; the actual cancel is the click-on-busy-button path (content.ts) - PreYem
+    const cancel = document.createElement("span");
+    cancel.className = "rs-btn-cancel";
+    cancel.textContent = "\u2715 Cancel";
+    btn.appendChild(cancel);
   } else {
     btn.textContent = labels[state];
   }
+
+  btn.setAttribute("aria-label", ariaLabels[state]);
 
   // #22: never disabled while loading — clicking the busy button cancels the in-flight
   // request (content.ts), which tells local servers to stop generating - PreYem
@@ -99,7 +127,7 @@ function buildBoldOpHandle(container: HTMLElement, text: string, author: string)
 }
 
 // Summary Modal - PreYem
-export function showModal(summary: SummarizeResponse, author: string) {
+export function showModal(summary: SummarizeResponse, author: string, elapsedMs: number | null, mode: string | null) {
   document.querySelector(".rs-modal-backgroundOverlay")?.remove();
 
   const overlay = document.createElement("div");
@@ -207,8 +235,41 @@ export function showModal(summary: SummarizeResponse, author: string) {
       </a>
     </div>
   `;
-  // Set the one dynamic value safely, via textContent.
-  footer.querySelector(".rs-modal-footer-model")!.textContent = `Generated by ${summary.aiModel}`;
+  // Fill the footer-model span with the source sentence, highlighting the provider label,
+  // the elapsed time and the model in accent colors (textContent only, never innerHTML).
+  // #24 rev4: local/api now end with " | model" so the model is stated too; cloud keeps its
+  // "Provider | model" label. Every sentence ends with a period - PreYem
+  const modelSpan = footer.querySelector(".rs-modal-footer-model")!;
+  const addPart = (cls: string | null, text: string) => {
+    if (cls) {
+      const part = document.createElement("span");
+      part.className = cls;
+      part.textContent = text;
+      modelSpan.appendChild(part);
+    } else {
+      modelSpan.appendChild(document.createTextNode(text));
+    }
+  };
+
+  if (elapsedMs === null || mode === null) {
+    addPart(null, "Generated by ");
+    addPart("rs-ft-model", summary.aiModel);
+    addPart(null, ".");
+  } else if (mode === "cloud") {
+    addPart(null, "Summarized by ");
+    addPart("rs-ft-label", summary.aiModel);
+    addPart(null, " in ");
+    addPart("rs-ft-time", formatElapsed(elapsedMs));
+    addPart(null, ".");
+  } else {
+    addPart(null, "Summarized by ");
+    addPart("rs-ft-label", mode === "local" ? "Your Local LLM" : "Your AI Cloud Provider");
+    addPart(null, " in ");
+    addPart("rs-ft-time", formatElapsed(elapsedMs));
+    addPart(null, " | ");
+    addPart("rs-ft-model", summary.aiModel);
+    addPart(null, ".");
+  }
 
   modal.appendChild(header);
   modal.appendChild(body);

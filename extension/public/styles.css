@@ -264,6 +264,15 @@
   to { transform: rotate(360deg); }
 }
 
+.rs-btn-cancel {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .rs-modal-subreddit {
   color: #ff4500;
   font-weight: 600;
@@ -279,6 +288,27 @@
   color: rgba(255, 255, 255, 0.35);
   font-size: 0.85em;
   vertical-align: 1px;
+}
+
+/* #24 rev4: accent highlights for the footer sentence — provider label, elapsed time, model.
+   Scoped under .rs-modal-footer so it beats the muted .rs-modal-footer > span base color */
+.rs-modal-footer .rs-ft-label {
+  color: #ff7a45;
+}
+.rs-modal-footer .rs-ft-time {
+  color: #ffd166;
+}
+.rs-modal-footer .rs-ft-model {
+  color: #5bc8ff;
+}
+.rs-theme-light .rs-modal-footer .rs-ft-label {
+  color: #c2410c;
+}
+.rs-theme-light .rs-modal-footer .rs-ft-time {
+  color: #8a6b12;
+}
+.rs-theme-light .rs-modal-footer .rs-ft-model {
+  color: #1d6fa5;
 }
 
 .rs-theme-light.rs-modal-backgroundOverlay {

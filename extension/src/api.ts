@@ -10,37 +10,40 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 let inFlight = false;
 let requestedUrl = "";
 
-export async function fetchSummary(data: SummarizeRequest): Promise<SummarizeResponse> {
+export async function fetchSummary(data: SummarizeRequest): Promise<{ response: SummarizeResponse; mode: "cloud" | "api" | "local" }> {
   inFlight = true;
   requestedUrl = window.location.href;
   try {
     // #18 routing: saved settings decide the path; anything missing/invalid falls back to cloud
     const settings = await readSettings();
     if (settings && settings.mode !== "cloud") {
-      return await summarizeLocally(settings, data);
+      return { response: await summarizeLocally(settings, data), mode: settings.mode };
     }
 
-    return await new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ type: "SUMMARIZE", data, backendUrl: BACKEND_URL }, (response) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-        if (!response) {
-          reject(new Error("No response from background script"));
-          return;
-        }
-        if (response.cancelled) {
-          reject(new CancelledError(response.error));
-          return;
-        }
-        if (!response.ok) {
-          reject(new Error(response.error));
-          return;
-        }
-        resolve(response.summary);
-      });
-    });
+    return {
+      response: await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ type: "SUMMARIZE", data, backendUrl: BACKEND_URL }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          if (!response) {
+            reject(new Error("No response from background script"));
+            return;
+          }
+          if (response.cancelled) {
+            reject(new CancelledError(response.error));
+            return;
+          }
+          if (!response.ok) {
+            reject(new Error(response.error));
+            return;
+          }
+          resolve(response.summary);
+        });
+      }),
+      mode: "cloud",
+    };
   } finally {
     inFlight = false;
   }

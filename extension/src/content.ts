@@ -2,7 +2,7 @@
 
 import { fetchSummary, cancelInFlight, cancelStaleCall } from "./api";
 import { createButton, showModal, showErrorModal, setButtonState, getCachedSummary, setCachedSummary } from "./summaryModal";
-import { CancelledError, LocalSummarizeError } from "./localLlm";
+import { CancelledError, LocalSummarizeError, readSettings } from "./localLlm";
 
 // Function to scrab the post for data processing to be sent to the backend - PreYem
 function scrapePost() {
@@ -61,6 +61,10 @@ let anchorWaitStartedAt = 0;
 
 // Injects the AI Summary button + a polite live region before refChild inside insertParent - PreYem
 function inject(insertParent: Element, refChild: Node | null) {
+  // #23: one-time diagnostic to confirm injection happens on the right page (fires once
+  // per page load because of the .rs-btn idempotency guard) - PreYem
+  console.log("[RS] inject:", window.location.pathname);
+
   // Creating the button - PreYem
   const injectedSummaryButton = createButton();
   injectedSummaryButton.setAttribute("aria-label", "Summarize this Reddit post with AI");
@@ -85,12 +89,21 @@ function inject(insertParent: Element, refChild: Node | null) {
     if (activating) return;
     activating = true;
     try {
-      // Check if we already summurized this post in case user exits the modal then tries again - PreYem
+      // #24: settings are read fresh on every click, so a Save on the settings page
+      // changes routing immediately. The page-memory cache must not outlive that:
+      // fingerprint the current source (mode+model) and only reuse a cached summary
+      // while the fingerprint matches — otherwise re-summarize with the new settings - PreYem
+      const currentSettings = await readSettings();
+      const settingsFingerprint =
+        currentSettings && currentSettings.mode !== "cloud"
+          ? `${currentSettings.mode}|${currentSettings.model || ""}`
+          : "cloud";
       const cachedSummary = getCachedSummary();
-      // If summary is still cached, we display it again to avoid unnecessary API calls - PreYem
-      if (cachedSummary) {
+      // If summary is still cached AND produced by the current settings, show it again
+      // to avoid unnecessary API calls - PreYem
+      if (cachedSummary && cachedSummary.settingsFingerprint === settingsFingerprint) {
         const data = scrapePost();
-        showModal(cachedSummary, data?.author ?? "[deleted]"); // Pass author
+        showModal(cachedSummary.response, data?.author ?? "[deleted]", cachedSummary.elapsedMs, cachedSummary.mode); // Pass author + original fetch duration + mode
         return;
       }
 
@@ -104,18 +117,24 @@ function inject(insertParent: Element, refChild: Node | null) {
         const data = scrapePost();
         if (!data) throw new Error("Failed to scrape post");
 
+        // #23: wall-clock timer for the "Summarized in Ns" modal line — local LLMs
+        // legitimately take longer, no special-casing - PreYem
+        const startedAt = Date.now();
+
         // Sending the scrapped data to the backend for processing - PreYem
-        const summary = await fetchSummary(data);
+        const result = await fetchSummary(data);
+        const elapsedMs = Date.now() - startedAt;
 
         // Saving the result in the cache function for future use if user is still on the same post page - PreYem
-        setCachedSummary(summary);
+        setCachedSummary(result.response, elapsedMs, result.mode, settingsFingerprint);
 
-        // Reset the button to its normal state - PreYem
-        setButtonState(injectedSummaryButton, "idle");
-        liveRegion.textContent = "";
+        // #23: summary now in memory — button flips to "Show Summary" so a later click
+        // re-opens the modal from cache instead of re-summarizing - PreYem
+        setButtonState(injectedSummaryButton, "done");
+        liveRegion.textContent = "Summary ready.";
 
         // Opening the summary modal with the summary data coming from the backend - PreYem
-        showModal(summary, data.author); // Pass author here
+        showModal(result.response, data.author, elapsedMs, result.mode); // Pass author + duration + mode here
       } catch (error) {
         // #20 cancellation (page left / URL changed mid-flight): stay silent, the
         // request was intentionally stopped — not a user-facing failure - PreYem
@@ -138,7 +157,8 @@ function inject(insertParent: Element, refChild: Node | null) {
         if (error instanceof LocalSummarizeError) {
           showErrorModal(error.provider, error.model, error.kind, error.message);
         } else {
-          showErrorModal("Cloud backend", "Backend server", "Backend error", error.message || "Failed to summarize | Backend server issue, try again later.");
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          showErrorModal("Cloud backend", "Backend server", "Backend error", errorMessage || "Failed to summarize | Backend server issue, try again later.");
         }
       }
     } finally {
@@ -196,6 +216,16 @@ function tryInject() {
 
   const postEl = document.querySelector("shreddit-post");
   if (!postEl) return;
+
+  // #23: strict single-post guard — a page is "the post's page" only when its pathname
+  // is that post's permalink. The loose /comments/ substring above also matched profile
+  // comment feeds (/u/<user>/comments/), where every comment card embeds a shreddit-post
+  // and used to get a stray button mid-feed - PreYem
+  const permalink = postEl.getAttribute("permalink");
+  if (permalink) {
+    const permalinkPath = permalink.replace(/\/+$/, "");
+    if (window.location.pathname !== permalinkPath && !window.location.pathname.startsWith(permalinkPath + "/")) return;
+  }
 
   // Primary anchor: the ... overflow menu, button injected right next to it - PreYem
   const overflowMenu = postEl.querySelector("shreddit-post-overflow-menu");

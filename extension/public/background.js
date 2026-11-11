@@ -159,7 +159,7 @@ function serverErrorDetail(status, detail) {
   } catch (error) {
     // Not JSON — keep the raw text
   }
-  return { message: message.trim().slice(0, 280) || "no detail", kind };
+  return { message: message.trim() || "no detail", kind };
 }
 
 // Mirror of services/groq-ai-prompt.ts: tolerant slice-out + strict 5-key schema - PreYem
@@ -223,7 +223,7 @@ async function runCustomLlm(message, sendResponse) {
       return;
     }
 
-    summary.aiModel = (settings.mode === "local" ? "Your Local LLM | " : "Your AI Cloud Provider | ") + settings.model;
+    summary.aiModel = settings.model;
     sendResponse({ ok: true, summary });
   } catch (error) {
     // #21 kind travels with the message so the error modal can label the failure type;
