@@ -114,27 +114,42 @@ function formConfig() {
   };
 }
 
-// ---- #20 Save gate: Save stays disabled until Test connection passes for the CURRENT
-// connection fields. Cloud mode has nothing to test, so Save is always enabled there - PreYem
+// ---- #20 Save gate + #24 post-save cooldown: Save stays disabled until Test connection
+// passes for the CURRENT connection fields (Cloud needs no test). Once Save is clicked it
+// disables itself again until the config actually changes (a field or model/think edit), so
+// a second click can't re-save the identical state - PreYem
 
 // Fingerprint of the connection fields the last successful Test actually exercised
 let verifiedKey = null;
+// Full signature (incl. model/think) of the exact config the last Save stored; Save is
+// disabled again right after clicking it so a second click can't re-save unchanged - PreYem
+let savedSignature = null;
 
 // Editing any of these invalidates a passed Test. Model and Thinking are left out on purpose:
-// picking a model right after Test is the normal flow and must not force a second Test.
-// To make EVERY field invalidate the test, add modelSelect and thinkSelect to this list.
+// picking a model right after Test is the normal flow and must not force a second Test —
+// they only force a re-Test when a config has already been Saved (#24) - PreYem
 const CONNECTION_FIELDS = [modeSelect, providerSelect, flavorSelect, endpointInput, apiKeyInput];
 
 function connectionKey(cfg) {
   return JSON.stringify([cfg.mode, cfg.provider, cfg.flavor, cfg.endpoint, cfg.apiKey]);
 }
 
+// Full state incl. model/think so a model/think toggle counts as "changed" for the post-save
+// cooldown - PreYem
+function fullSignature(cfg) {
+  return JSON.stringify([cfg.mode, cfg.provider, cfg.flavor, cfg.endpoint, cfg.apiKey, cfg.model, cfg.think]);
+}
+
 function updateSaveState() {
   const cfg = formConfig();
-  const allowed = cfg.mode === "cloud" || verifiedKey === connectionKey(cfg);
+  const tested = cfg.mode === "cloud" || verifiedKey === connectionKey(cfg);
+  const notAlreadySaved = fullSignature(cfg) !== savedSignature;
+  const allowed = tested && notAlreadySaved;
 
   saveButton.disabled = !allowed;
-  saveButton.title = allowed ? "" : "Run Test connection successfully first";
+  saveButton.title = tested
+    ? (allowed ? "" : "Saved — edit a field (or model) then Test to save again")
+    : "Run Test connection successfully first";
 
   // The hint element is optional in the settings HTML.
   if (saveHint) {
@@ -287,6 +302,8 @@ function persist(settings) {
   slots[key] = slot;
   chrome.storage.local.set({ [SETTINGS_KEY]: { v: SETTINGS_VERSION, activeKey: key, slots } }, () => {
     savedSlots = slots;
+    savedSignature = fullSignature(formConfig());
+    updateSaveState(); // #24: the Save just consumed itself → button greys out until a change
     setStatus("ok", "Saved. These persist across sessions and browser restarts.");
   });
 }
@@ -320,6 +337,19 @@ flavorSelect.addEventListener("change", () => {
   showSections();
   applySlot();
 });
+
+// #24: once a config has been Saved, toggling the model or thinking counts as a change
+// — it clears the passed Test so Save only re-arms after a fresh Test for the new pick.
+// Before any Save exists (savedSignature null), picking a model right after Test stays
+// the normal free flow - PreYem
+function onModelEdit() {
+  if (savedSignature) {
+    verifiedKey = null;
+    updateSaveState();
+  }
+}
+modelSelect.addEventListener("change", onModelEdit);
+thinkSelect.addEventListener("change", onModelEdit);
 
 // Eye toggle: password inputs never render their typed value, so the button flips the
 // SAME input's type (the value stays in the element, no retyping) and hides the slash.
@@ -433,6 +463,8 @@ if (resetButton)
     delete slots[key];
     savedSlots = slots;
     chrome.storage.local.set({ [SETTINGS_KEY]: { v: SETTINGS_VERSION, activeKey: key, slots } }, () => {
+      savedSlots = slots;
+      savedSignature = null; // #24: nothing saved for this source now, so Save can arm again
       setStatus("info", "All fields reset to their defaults - nothing is saved for this source.");
     });
   });
