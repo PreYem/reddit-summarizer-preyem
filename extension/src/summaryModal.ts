@@ -261,7 +261,7 @@ export function showModal(summary: SummarizeResponse, author: string, elapsedMs:
     addPart(null, "Summarized by ");
     addPart(
       "rs-ft-label",
-      mode === "local" ? "Your Local LLM" : mode === "api" ? "Your AI Cloud Provider" : "Reddit Summarizer's backend",
+      mode === "local" ? "Your Local Model" : mode === "api" ? "Your AI Cloud Provider" : "Reddit Summarizer's backend",
     );
     addPart(null, " in ");
     addPart("rs-ft-time", formatElapsed(elapsedMs));

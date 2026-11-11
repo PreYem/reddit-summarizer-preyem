@@ -1,4 +1,4 @@
 @import "tailwindcss";
 @source "../public/popup.html";
 @source "../public/settings.html";
-@source "../public/settings.js";
+@source "../public/settings.ts";

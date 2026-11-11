@@ -11,39 +11,55 @@ const SETTINGS_KEY = "rs_settings";
 // so switching source on the page (or after saving) repopulates THAT source's fields - PreYem
 const SETTINGS_VERSION = 3;
 
-const modeSelect = document.getElementById("rs-mode");
-const providerSelect = document.getElementById("rs-provider");
-const flavorSelect = document.getElementById("rs-flavor");
-const endpointInput = document.getElementById("rs-endpoint");
-const apiKeyInput = document.getElementById("rs-api-key");
-const modelSelect = document.getElementById("rs-model");
-const saveButton = document.getElementById("rs-save");
+// TS helpers for the page's controls. saveHint/resetButton stay nullable on purpose - the
+// code guards for their absence, so a missing element id can't crash the rest of the page.
+function selectById(id: string) {
+  return document.getElementById(id) as unknown as HTMLSelectElement;
+}
+function inputById(id: string) {
+  return document.getElementById(id) as unknown as HTMLInputElement;
+}
+function buttonById(id: string) {
+  return document.getElementById(id) as unknown as HTMLButtonElement;
+}
+function elementById(id: string) {
+  return document.getElementById(id) as HTMLElement;
+}
+
+const modeSelect = selectById("rs-mode");
+const providerSelect = selectById("rs-provider");
+const flavorSelect = selectById("rs-flavor");
+const endpointInput = inputById("rs-endpoint");
+const apiKeyInput = inputById("rs-api-key");
+const modelSelect = selectById("rs-model");
+const saveButton = buttonById("rs-save");
 const saveHint = document.getElementById("rs-save-hint");
-const testButton = document.getElementById("rs-test");
-const statusLine = document.getElementById("rs-status");
-const thinkSelect = document.getElementById("rs-think");
-const keyEyeButton = document.getElementById("rs-key-eye");
-const keyEyeSlash = document.getElementById("rs-key-eye-slash");
+const testButton = buttonById("rs-test");
+const statusLine = elementById("rs-status");
+const thinkSelect = selectById("rs-think");
+const keyEyeButton = buttonById("rs-key-eye");
+const keyEyeSlash = elementById("rs-key-eye-slash");
 const sections = {
-  api: document.getElementById("sec-api"),
-  local: document.getElementById("sec-local"),
-  server: document.getElementById("sec-server"),
-  key: document.getElementById("sec-key"),
-  model: document.getElementById("sec-model"),
-  think: document.getElementById("sec-think"),
+  api: elementById("sec-api"),
+  local: elementById("sec-local"),
+  server: elementById("sec-server"),
+  key: elementById("sec-key"),
+  model: elementById("sec-model"),
+  think: elementById("sec-think"),
 };
 const resetButton = document.getElementById("rs-reset");
 
 // Slots shape: { "api:openai": {apiKey, model}, "api:other": {endpoint, apiKey, model},
 // "local:ollama": {endpoint, apiKey?, model, think?}, ... } + activeKey = last saved source - PreYem
-let savedSlots = {};
+let savedSlots: any = {};
 
 // #19 thinking level: missing/invalid storage value means "none" (no schema bump) - PreYem
-const THINK_VALUES = ["none", "low", "medium", "high"];
+// Named THINK_LEVELS (not THINK_VALUES) so it can't collide with background.ts in script scope - PreYem
+const THINK_LEVELS = ["none", "low", "medium", "high"];
 
 // Ollama's native /api/chat only does think true/false — the level select is replaced by
 // None/On, and "On" stores "low" (background maps anything != none to think:true) - PreYem
-function setThinkOptions(preferred) {
+function setThinkOptions(preferred: string | null) {
   while (thinkSelect.firstChild) thinkSelect.removeChild(thinkSelect.firstChild);
   const options =
     flavorSelect.value === "ollama"
@@ -58,23 +74,25 @@ function setThinkOptions(preferred) {
           ["high", "High"],
         ];
   for (const entry of options) {
-    const option = document.createElement("option");
+    const option = document.createElement("option") as HTMLOptionElement;
     option.value = entry[0];
     option.textContent = entry[1];
     thinkSelect.appendChild(option);
   }
   const allowed = options.map((entry) => entry[0]);
-  const chosen = allowed.includes(preferred) ? preferred : "none";
-  for (const option of thinkSelect.options) option.selected = option.value === chosen;
+  const chosen = allowed.includes(preferred ?? "") ? preferred ?? "none" : "none";
+  for (let i = 0; i < thinkSelect.options.length; i++) {
+    thinkSelect.options[i].selected = thinkSelect.options[i].value === chosen;
+  }
 }
 
-function setStatus(kind, text) {
+function setStatus(kind: string, text: string) {
   statusLine.textContent = text;
-  const colors = { ok: "text-[#46d160]", warn: "text-[#ffb3a6]", error: "text-[#ff4500]", info: "text-white/45" };
+  const colors: Record<string, string> = { ok: "text-[#46d160]", warn: "text-[#ffb3a6]", error: "text-[#ff4500]", info: "text-white/45" };
   statusLine.className = "text-[11.5px] leading-normal " + colors[kind];
 }
 
-function isValidEndpoint(value) {
+function isValidEndpoint(value: string | null) {
   if (!value) return false;
   try {
     const url = new URL(value);
@@ -84,7 +102,7 @@ function isValidEndpoint(value) {
   }
 }
 
-function modeLabel(mode) {
+function modeLabel(mode: string) {
   return mode === "api" ? "AI Cloud Provider" : mode === "local" ? "Local" : "Cloud";
 }
 
@@ -121,23 +139,33 @@ function formConfig() {
 // a second click can't re-save the identical state - PreYem
 
 // Fingerprint of the connection fields the last successful Test actually exercised
-let verifiedKey = null;
+let verifiedKey: string | null = null;
 // Full signature (incl. model/think) of the exact config the last Save stored; Save is
 // disabled again right after clicking it so a second click can't re-save unchanged - PreYem
-let savedSignature = null;
+let savedSignature: string | null = null;
 
 // Editing any of these invalidates a passed Test. Model and Thinking are left out on purpose:
 // picking a model right after Test is the normal flow and must not force a second Test —
 // they only force a re-Test when a config has already been Saved (#24) - PreYem
 const CONNECTION_FIELDS = [modeSelect, providerSelect, flavorSelect, endpointInput, apiKeyInput];
 
-function connectionKey(cfg) {
+interface FormConfig {
+  mode: string;
+  provider: string;
+  flavor: string;
+  endpoint: string;
+  apiKey: string;
+  model: string;
+  think: string;
+}
+
+function connectionKey(cfg: FormConfig) {
   return JSON.stringify([cfg.mode, cfg.provider, cfg.flavor, cfg.endpoint, cfg.apiKey]);
 }
 
 // Full state incl. model/think so a model/think toggle counts as "changed" for the post-save
 // cooldown - PreYem
-function fullSignature(cfg) {
+function fullSignature(cfg: FormConfig) {
   return JSON.stringify([cfg.mode, cfg.provider, cfg.flavor, cfg.endpoint, cfg.apiKey, cfg.model, cfg.think]);
 }
 
@@ -173,32 +201,33 @@ for (const field of CONNECTION_FIELDS) {
 }
 
 // Mirrors extension/public/background.ts: same base URL + request kind rules, used
-// here only for model-list discovery and Test connection - PreYem
-function endpointBase(cfg) {
+// here only for model-list discovery and Test connection. Named with a Cfg suffix so the
+// two script-scope files can't collide on identical globals - PreYem
+function endpointBaseCfg(cfg: FormConfig) {
   if (cfg.mode === "api" && cfg.provider !== "other") {
     return cfg.provider === "anthropic" ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1";
   }
   return (cfg.endpoint || "").trim().replace(/\/+$/, "");
 }
 
-function kindOf(cfg) {
+function kindOfCfg(cfg: FormConfig) {
   if (cfg.mode === "local") return cfg.flavor === "ollama" ? "ollama" : "openai";
   return cfg.provider === "anthropic" ? "anthropic" : "openai";
 }
 
-function modelListUrl(cfg) {
-  const base = endpointBase(cfg);
-  const kind = kindOf(cfg);
+function modelListUrl(cfg: FormConfig) {
+  const base = endpointBaseCfg(cfg);
+  const kind = kindOfCfg(cfg);
   if (kind === "ollama") return base + "/api/tags";
   if (kind === "anthropic") return (/\/v1$/.test(base) ? base : base + "/v1") + "/models";
   const hasPath = new URL(base).pathname !== "/";
   return (hasPath ? base : base + "/v1") + "/models";
 }
 
-function modelHeaders(cfg) {
-  const headers = {};
+function modelHeaders(cfg: any) {
+  const headers: Record<string, string> = {};
   if (!cfg.apiKey) return headers;
-  if (kindOf(cfg) === "anthropic") {
+  if (kindOfCfg(cfg) === "anthropic") {
     headers["x-api-key"] = cfg.apiKey;
     headers["anthropic-version"] = "2023-06-01";
   } else {
@@ -208,8 +237,8 @@ function modelHeaders(cfg) {
 }
 
 // openai-style {data:[{id}]} + ollama-style {models:[{name}]} listings - PreYem
-function parseModelIds(json) {
-  const ids = [];
+function parseModelIds(json: any) {
+  const ids: string[] = [];
   for (const entry of json.data || []) {
     if (entry && typeof entry.id === "string") ids.push(entry.id);
   }
@@ -221,21 +250,23 @@ function parseModelIds(json) {
   return ids;
 }
 
-function setModelOptions(ids, preferred) {
+function setModelOptions(ids: string[], preferred: string | null) {
   while (modelSelect.firstChild) modelSelect.removeChild(modelSelect.firstChild);
   for (const id of ids) {
-    const option = document.createElement("option");
+    const option = document.createElement("option") as HTMLOptionElement;
     option.value = id;
     option.textContent = id;
     modelSelect.appendChild(option);
   }
-  const chosen = ids.indexOf(preferred) >= 0 ? preferred : ids.length ? ids[0] : null;
-  for (const option of modelSelect.options) option.selected = option.value === chosen;
+  const chosen = ids.indexOf(preferred ?? "") >= 0 ? preferred : ids.length ? ids[0] : null;
+  for (let i = 0; i < modelSelect.options.length; i++) {
+    modelSelect.options[i].selected = modelSelect.options[i].value === chosen;
+  }
 }
 
 // GET the server's model list; the page is privileged so no Reddit-origin CORS is involved.
 // Chromium gates this host by host_permissions (granted below for anything else) - PreYem
-function fetchModelIds(cfg, callback) {
+function fetchModelIds(cfg: any, callback: (ids: string[]) => void) {
   fetch(modelListUrl(cfg), { headers: modelHeaders(cfg) })
     .then((response) => {
       if (!response.ok) {
@@ -255,23 +286,23 @@ function fetchModelIds(cfg, callback) {
 const PRE_GRANTED = ["http://localhost/*", "http://127.0.0.1/*"];
 
 // Built-in base for the named API providers (used to request access for their origin)
-function providerEndpoint(cfg) {
+function providerEndpoint(cfg: any) {
   if (cfg.mode !== "api" || cfg.provider === "other") return "";
   return cfg.provider === "anthropic" ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1";
 }
 
-function originPattern(endpoint) {
+function originPattern(endpoint: string) {
   const url = new URL(endpoint);
   return url.protocol + "//" + url.hostname + "/*";
 }
 
 // Must be called synchronously from inside a click handler (user gesture requirement)
-function requestEndpointAccess(endpoint, callback) {
+function requestEndpointAccess(endpoint: string | null, callback: (granted: boolean) => void) {
   if (!endpoint || !isValidEndpoint(endpoint)) {
     callback(true); // Cloud/pre-configured providers don't gate on a typed endpoint
     return;
   }
-  const pattern = originPattern(endpoint);
+  const pattern = originPattern(endpoint!);
   if (PRE_GRANTED.includes(pattern)) {
     callback(true);
     return;
@@ -295,7 +326,7 @@ function currentKey() {
   return "cloud";
 }
 
-function persist(settings) {
+function persist(settings: any) {
   const key = settings.mode === "cloud" ? "cloud" : settings.mode + ":" + (settings.mode === "api" ? settings.provider : settings.flavor);
   const slots = Object.assign({}, savedSlots);
   const slot = Object.assign({}, settings);
@@ -419,7 +450,7 @@ saveButton.addEventListener("click", () => {
       setStatus("error", "Pick a model from the dropdown - run Test connection to load the list first.");
       return;
     }
-    const settings = { v: SETTINGS_VERSION, mode, provider, apiKey, model };
+    const settings: any = { v: SETTINGS_VERSION, mode, provider, apiKey, model };
     if (provider === "other") settings.endpoint = endpoint;
     requestEndpointAccess(provider === "other" ? endpoint : providerEndpoint({ mode, provider }), (granted) => {
       if (granted) persist(settings);
@@ -436,9 +467,9 @@ saveButton.addEventListener("click", () => {
       setStatus("error", "Pick a model from the dropdown - run Test connection to load the list first.");
       return;
     }
-    const settings = { v: SETTINGS_VERSION, mode, flavor: flavorSelect.value, endpoint, model };
+    const settings: any = { v: SETTINGS_VERSION, mode, flavor: flavorSelect.value, endpoint, model };
     if (apiKey) settings.apiKey = apiKey;
-    const think = THINK_VALUES.includes(thinkSelect.value) ? thinkSelect.value : "none";
+    const think = THINK_LEVELS.includes(thinkSelect.value) ? thinkSelect.value : "none";
     if (think !== "none") settings.think = think;
     requestEndpointAccess(endpoint, (granted) => {
       if (granted) persist(settings);
@@ -530,6 +561,7 @@ testButton.addEventListener("click", () => {
   try {
     runTestConnection();
   } catch (error) {
-    setStatus("error", "Test connection hiccup: " + (error.message || String(error)));
+    const hiccup = error as Error;
+    setStatus("error", "Test connection hiccup: " + (hiccup.message || String(error)));
   }
 });

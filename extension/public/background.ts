@@ -40,16 +40,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // AbortController of the in-flight fetch (cloud or custom); CANCEL aborts it. callOnce
 // re-points it per call so the malformed-JSON retry is cancellable too - PreYem
-let activeAbort = null;
+let activeAbort: AbortController | null = null;
 
-function endpointBase(settings) {
+interface LlmSettings {
+  mode?: string;
+  provider?: string;
+  flavor?: string;
+  endpoint?: string;
+  apiKey?: string;
+  model?: string;
+  think?: string;
+}
+
+// #21 own error shape: status + kind travel on the Error object so the retry policy and
+// the error modal can both read them - PreYem
+class RequestError extends Error {
+  status?: number;
+  kind?: string;
+}
+
+function endpointBase(settings: LlmSettings) {
   if (settings.mode === "api" && settings.provider !== "other") {
     return settings.provider === "anthropic" ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1";
   }
   return (settings.endpoint || "").trim().replace(/\/+$/, "");
 }
 
-function kindOf(settings) {
+function kindOf(settings: LlmSettings) {
   if (settings.mode === "local") return settings.flavor === "ollama" ? "ollama" : "openai";
   return settings.provider === "anthropic" ? "anthropic" : "openai";
 }
@@ -57,12 +74,12 @@ function kindOf(settings) {
 // Per-kind request shapes: openai-compat /chat/completions, ollama native /api/chat,
 // anthropic /v1/messages (x-api-key header). Keys ONLY for user-provided config; the
 // cloud extension-frontend-key never travels to custom endpoints - PreYem
-function buildRequest(settings, prompt, stripThinking) {
+function buildRequest(settings: LlmSettings, prompt: string, stripThinking: boolean) {
   const base = endpointBase(settings);
   const kind = kindOf(settings);
-  const headers = { "Content-Type": "application/json" };
-  let url;
-  let payload;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  let url: string;
+  let payload: Record<string, unknown>;
 
   if (kind === "anthropic") {
     headers["x-api-key"] = settings.apiKey || "";
@@ -89,7 +106,7 @@ const THINK_VALUES = ["none", "low", "medium", "high"];
   // takes think true/false — ollama levels collapse, the UI only offers off/on anyway.
   // Local-only by user decision: own-API requests stay untouched - PreYem
   if (settings.mode === "local" && !stripThinking) {
-    const think = THINK_VALUES.includes(settings.think) ? settings.think : "none";
+    const think = THINK_VALUES.includes(settings.think ?? "") ? settings.think ?? "none" : "none";
     if (kind === "ollama") {
       payload.think = think !== "none";
     } else if (think !== "none") {
@@ -103,7 +120,7 @@ const THINK_VALUES = ["none", "low", "medium", "high"];
   return { url, headers, payload };
 }
 
-async function callOnce(settings, prompt, stripThinking) {
+async function callOnce(settings: LlmSettings, prompt: string, stripThinking: boolean) {
   const request = buildRequest(settings, prompt, stripThinking);
   activeAbort = new AbortController();
   const response = await fetch(request.url, {
@@ -116,7 +133,7 @@ async function callOnce(settings, prompt, stripThinking) {
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     const server = serverErrorDetail(response.status, detail);
-    const error = new Error(server.message);
+    const error = new RequestError(server.message);
     error.status = response.status;
     error.kind = server.kind;
     throw error;
@@ -125,7 +142,7 @@ async function callOnce(settings, prompt, stripThinking) {
   const json = await response.json();
 
   if (kindOf(settings) === "anthropic") {
-    return (Array.isArray(json.content) ? json.content : []).map((part) => part.text || "").join(" ");
+    return (Array.isArray(json.content) ? json.content : []).map((part: any) => part.text || "").join(" ");
   }
   if (settings.mode === "local" && settings.flavor === "ollama") {
     return (json.message && json.message.content) || json.response || "";
@@ -138,7 +155,7 @@ async function callOnce(settings, prompt, stripThinking) {
 // #21 server error bodies are JSON envelopes ({error:{message,type,code}} OpenAI-style or
 // a top-level {type,message} Anthropic-style): split into a human message + an error-type
 // label so the error modal can show kind, provider, model and message separately - PreYem
-function serverErrorDetail(status, detail) {
+function serverErrorDetail(status: number, detail: string) {
   let message = detail;
   let kind = "HTTP " + status;
   try {
@@ -163,14 +180,14 @@ function serverErrorDetail(status, detail) {
 }
 
 // Mirror of services/groq-ai-prompt.ts: tolerant slice-out + strict 5-key schema - PreYem
-function extractJson(text) {
+function extractJson(text: string) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end <= start) return null;
   return text.slice(start, end + 1);
 }
 
-function parseSummary(raw) {
+function parseSummary(raw: string) {
   const json = extractJson(
     raw
       .replace(/<think>[\s\S]*?<\/think>/g, "")
@@ -193,7 +210,7 @@ function parseSummary(raw) {
   return parsed;
 }
 
-async function runCustomLlm(message, sendResponse) {
+async function runCustomLlm(message: any, sendResponse: (response?: any) => void) {
   // Local models can stall for minutes before the first byte; the ping keeps the MV3
   // service worker from being shut down mid-request - PreYem
   const keepAlive = setInterval(() => chrome.runtime.getPlatformInfo(() => {}), 20_000);
@@ -211,7 +228,7 @@ async function runCustomLlm(message, sendResponse) {
       raw = await callOnce(settings, message.prompt, stripped);
     } catch (error) {
       // error.status (not a string match) drives the one-thinking-strip retry - PreYem
-      if (settings.mode !== "local" || error.status !== 400) throw error;
+      if (settings.mode !== "local" || !(error instanceof RequestError) || error.status !== 400) throw error;
       stripped = true;
       raw = await callOnce(settings, message.prompt, stripped);
     }
@@ -228,11 +245,12 @@ async function runCustomLlm(message, sendResponse) {
   } catch (error) {
     // #21 kind travels with the message so the error modal can label the failure type;
     // fetch/connection failures come as TypeErrors with cryptic messages, so label those - PreYem
+    const requestError = error as RequestError;
     sendResponse({
       ok: false,
-      cancelled: error.name === "AbortError" || undefined,
-      error: error.message || String(error),
-      kind: error.kind || (error.name === "AbortError" ? undefined : error.name === "TypeError" ? "Network / server unreachable" : "Request failed"),
+      cancelled: requestError.name === "AbortError" || undefined,
+      error: requestError.message || String(error),
+      kind: requestError.kind || (requestError.name === "AbortError" ? undefined : requestError.name === "TypeError" ? "Network / server unreachable" : "Request failed"),
     });
   } finally {
     clearInterval(keepAlive);
