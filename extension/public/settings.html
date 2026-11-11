@@ -6,8 +6,8 @@
     <link rel="stylesheet" href="tailwind.css" />
     <title>Settings | Reddit Summarizer</title>
   </head>
-  <body class="m-0 min-h-screen w-full bg-[#1a1a1b] p-5 font-sans text-[#d7dadc] antialiased [color-scheme:dark]">
-    <main class="mx-auto flex w-full max-w-[560px] flex-col gap-5 py-4">
+  <body class="m-0 min-h-screen w-full bg-[#1a1a1b] p-5 font-sans text-[#d7dadc] antialiased scheme-dark">
+    <main class="mx-auto flex w-full max-w-140 flex-col gap-5 py-4">
       <!-- Header -->
       <header class="flex items-center justify-between">
         <div class="flex items-center gap-2.5">
@@ -28,7 +28,7 @@
 
             <img src="icons/icon-512.png" />
           </span>
-          <h1 class="text-[18px] font-bold leading-none text-[#ff4500]">Reddit Summarizer Settings</h1>
+          <h1 class="text-lg font-bold leading-none text-[#ff4500]">Reddit Summarizer Settings</h1>
         </div>
         <span class="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/35">v1.7.0</span>
       </header>
@@ -40,7 +40,7 @@
 
       <!-- Settings card. Section blocks keep "hidden flex flex-col" exactly as before,
            settings.js decides which ones show per source - PreYem -->
-      <section class="flex flex-col gap-5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-5">
+      <section class="flex flex-col gap-5 rounded-xl border border-white/7 bg-white/3 p-5">
         <!-- Source -->
         <div class="flex flex-col gap-1.5">
           <label class="text-[12.5px] font-semibold text-white/85" for="rs-mode">Source</label>
@@ -252,7 +252,7 @@
           </div>
         </div>
 
-        <div class="h-px bg-white/[0.07]"></div>
+        <div class="h-px bg-white/7"></div>
 
         <!-- Actions -->
         <!-- Actions. Save starts disabled; settings.js enables it only after a passing Test (or in Cloud mode) - PreYem -->
@@ -260,7 +260,7 @@
           <button
             id="rs-save"
             disabled
-            class="cursor-pointer rounded-md border border-[#3988ff] bg-[#3988ff] px-4 py-2 text-[12.5px] font-semibold text-white transition-colors enabled:hover:bg-[#4a95ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.06] disabled:text-white/30"
+            class="cursor-pointer rounded-md border border-[#3988ff] bg-[#3988ff] px-4 py-2 text-[12.5px] font-semibold text-white transition-colors enabled:hover:bg-[#4a95ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/6 disabled:text-white/30"
           >
             Save
           </button>
@@ -272,20 +272,20 @@
           </button>
           <button
             id="rs-reset"
-            class="cursor-pointer rounded-md border border-white/15 bg-white/[0.06] px-4 py-2 text-[12.5px] font-semibold text-[#d7dadc] transition-colors hover:bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff]"
+            class="cursor-pointer rounded-md border border-white/15 bg-white/6 px-4 py-2 text-[12.5px] font-semibold text-[#d7dadc] transition-colors hover:bg-white/12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff]"
           >
             Reset
           </button>
         </div>
 
         <!-- Status line: settings.js overwrites the paragraph's classes, so the box styling lives on the wrapper -->
-        <div class="rounded-md border border-white/[0.07] bg-black/20 px-3 py-2.5">
+        <div class="rounded-md border border-white/7 bg-black/20 px-3 py-2.5">
           <p id="rs-status" class="text-[11.5px] leading-normal text-white/45">No settings saved yet - cloud mode in use.</p>
         </div>
       </section>
 
       <!-- Setup tips: collapsed by default, no JS needed -->
-      <details class="group rounded-xl border border-[#ff4500]/20 bg-[#ff4500]/[0.06] px-4 py-3">
+      <details class="group rounded-xl border border-[#ff4500]/20 bg-[#ff4500]/6 px-4 py-3">
         <summary
           class="flex cursor-pointer list-none items-center justify-between text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#ff4500] marker:hidden [&::-webkit-details-marker]:hidden"
         >
@@ -323,7 +323,7 @@
 
       <!-- Footer -->
       <footer class="flex flex-col gap-3">
-        <div class="h-px bg-white/[0.07]"></div>
+        <div class="h-px bg-white/7"></div>
 
         <p class="text-[11px] leading-relaxed text-white/40">
           Local mode sends requests directly to your configured server, without passing through our backend. The source code is open:
@@ -336,7 +336,7 @@
           >.
         </p>
 
-        <div class="h-px bg-white/[0.07]"></div>
+        <div class="h-px bg-white/7"></div>
 
         <!-- Developer attribution / socials -->
         <div class="flex items-center justify-between">
