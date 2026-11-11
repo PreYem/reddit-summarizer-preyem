@@ -1,6 +1,7 @@
 // #18 settings page script - PreYem
-// Extension pages forbid inline JS, so this file wires everything up (kept verbatim in
-// builds, so it stays plain JS).
+// Extension pages forbid inline JS, so this file wires everything up. It is authored in TS
+// but transpiled to plain settings.js at build time (copy-public.mjs), which is the name
+// settings.html loads.
 // NOTE: chrome.storage keys cannot contain dots, so plan #18's `rs.settings` notation is
 // stored as `rs_settings` here (same key the content scripts read in localLlm.ts).
 // v2 schema: three sources — cloud | api (own provider key) | local (own server).
@@ -171,7 +172,7 @@ for (const field of CONNECTION_FIELDS) {
   field.addEventListener("change", onConnectionEdit);
 }
 
-// Mirrors extension/public/background.js: same base URL + request kind rules, used
+// Mirrors extension/public/background.ts: same base URL + request kind rules, used
 // here only for model-list discovery and Test connection - PreYem
 function endpointBase(cfg) {
   if (cfg.mode === "api" && cfg.provider !== "other") {

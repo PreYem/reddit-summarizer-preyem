@@ -1,10 +1,18 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from "fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { transpile, ScriptTarget } from "typescript";
 
 const target = process.argv[2] === "gecko" ? "gecko" : "chromium";
 const dist = "dist/" + target;
 
-for (const file of ["background.js", "popup.html", "settings.html", "settings.js", "styles.css", "popup.css"]) {
+for (const file of ["popup.html", "settings.html", "styles.css", "popup.css"]) {
   copyFileSync("public/" + file, dist + "/" + file);
+}
+
+// #24: the settings page + background page sources are authored in TS now; this transpiles
+// them straight to plain JS next to the other public assets (no bundling, comments kept) - PreYem
+for (const name of ["background", "settings"]) {
+  const js = transpile(readFileSync("public/" + name + ".ts", "utf8"), { target: ScriptTarget.ES2020 });
+  writeFileSync(dist + "/" + name + ".js", js);
 }
 
 copyFileSync("public/manifest." + target + ".json", dist + "/manifest.json");
