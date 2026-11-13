@@ -4,7 +4,7 @@ import { transpile, ScriptTarget } from "typescript";
 const target = process.argv[2] === "gecko" ? "gecko" : "chromium";
 const dist = "dist/" + target;
 
-for (const file of ["popup.html", "settings.html", "styles.css", "popup.css"]) {
+for (const file of ["popup.html", "settings.html", "styles.css"]) {
   copyFileSync("public/" + file, dist + "/" + file);
 }
 

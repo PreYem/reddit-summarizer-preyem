@@ -16,7 +16,7 @@ A browser extension (Chromium + Gecko/Firefox) that injects an "AI Summary" butt
 
 ## Two workspaces (npm workspaces at root, v1.1.0)
 
-- `extension/` — TS + Vite + Tailwind v4, built twice into `dist/chromium` and `dist/gecko` (vite build + `copy-public.mjs` copies static assets incl. `background.js`, `popup.html`, `popup.css`, `settings.html`, `settings.js`, `styles.css`, manifests, icons). `watch.mjs` drives the dev loop. Extension never fetches from the content bundle: cloud path = `chrome.runtime.sendMessage({type:"SUMMARIZE", data, backendUrl})`; own-API/local path = `{type:"LOCAL_LLM", settings, prompt}` — both handled by `public/background.js`, so the fetch never carries Reddit's origin/page CORS.
+- `extension/` — TS + Vite + Tailwind v4, built twice into `dist/chromium` and `dist/gecko` (vite build + `copy-public.mjs` copies static assets incl. `background.js`, `popup.html`, `settings.html`, `settings.js`, `styles.css`, manifests, icons). `watch.mjs` drives the dev loop. Extension never fetches from the content bundle: cloud path = `chrome.runtime.sendMessage({type:"SUMMARIZE", data, backendUrl})`; own-API/local path = `{type:"LOCAL_LLM", settings, prompt}` — both handled by `public/background.js`, so the fetch never carries Reddit's origin/page CORS.
 - `express-backend/` — Node + Express 5 + TS via `ts-node-dev` (no compile step), dotenv. Runs on `PORT` (default 3000; deploy target is Render, hence the `trust proxy 1` handling).
 
 ## Data types

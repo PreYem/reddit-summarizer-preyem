@@ -5,7 +5,7 @@ import { transpile, ScriptTarget } from "typescript";
 // Only the icon sizes referenced by each manifest are required in the build.
 function copyPublicFiles(target) {
   const dist = `dist/${target}`;
-  for (const file of ["popup.html", "settings.html", "styles.css", "popup.css"]) {
+  for (const file of ["popup.html", "settings.html", "styles.css"]) {
     copyFileSync(`public/${file}`, `${dist}/${file}`);
   }
   // #25: shared/languages.ts is transpiled to a classic-script global for settings.js/popup.js - PreYem
