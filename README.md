@@ -8,7 +8,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
 ![Languages](https://img.shields.io/badge/languages-11-0e8a16)
 
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hidbganfakecbfakodiccnabgpdigfdp?label=Chrome%20Web%20Store&logo=chromewebstore&logoColor=white&color=4285f4)](https://chromewebstore.google.com/detail/reddit-summarizer/hidbganfakecbfakodiccnabgpdigfdp)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hidbganfakecbfakodiccnabgpdigfdp?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white&color=4285f4)](https://chromewebstore.google.com/detail/reddit-summarizer/hidbganfakecbfakodiccnabgpdigfdp)
 [![Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add-ons-ff7139?logo=firefox&logoColor=white)](https://addons.mozilla.org/en-GB/firefox/addon/reddit-summarizer/)
 
 [Features](#features) · [Requirements](#requirements) · [Setup](#setup) · [Stats dashboard](#stats-dashboard) · [Good to know](#good-to-know) · [Privacy](#privacy-support-and-credits)
