@@ -8,6 +8,9 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
 ![Languages](https://img.shields.io/badge/languages-11-0e8a16)
 
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hidbganfakecbfakodiccnabgpdigfdp?label=Chrome%20Web%20Store&logo=chromewebstore&logoColor=white&color=4285f4)](https://chromewebstore.google.com/detail/reddit-summarizer/hidbganfakecbfakodiccnabgpdigfdp)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add-ons-ff7139?logo=firefox&logoColor=white)](https://addons.mozilla.org/en-GB/firefox/addon/reddit-summarizer/)
+
 [Features](#features) · [Requirements](#requirements) · [Setup](#setup) · [Stats dashboard](#stats-dashboard) · [Good to know](#good-to-know) · [Privacy](#privacy-support-and-credits)
 
 ![An AI summary of a Reddit post, shown in a modal over the thread](extension/public/store-screenshots/summary_01.png)
@@ -27,7 +30,7 @@ A browser extension that injects an **AI Summary** button into Reddit post pages
 - **Model auto-detection.** The model dropdown is filled from your server's model list (`/models`, Anthropic `/v1/models`, Ollama `/api/tags`) — you never type a model name.
 - **11 languages.** UI (button + modal) and the summary itself: English, French, Spanish, German, Italian, Portuguese, Dutch, Arabic, Hindi, Japanese, Korean. UI language and Summary language are separate settings; the popup and settings page stay English.
 - **Caching, cancelling, clean errors.** Repeat clicks replay the cached modal for free; in-flight requests can be cancelled (and are auto-cancelled on tab close, so local servers stop generating); failures open an error modal with provider, model and HTTP details, and are never cached.
-- **Self-hoster friendly.** A Node/Express backend logs the latest 500 requests with a key-gated stats dashboard, per-IP rate limits and daily quotas.
+- **Pre-built, or build yourself.** Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/reddit-summarizer/hidbganfakecbfakodiccnabgpdigfdp) or [Firefox Add-ons](https://addons.mozilla.org/en-GB/firefox/addon/reddit-summarizer/), or run the self-hosted backend below for full control.
 
 ## Requirements
 

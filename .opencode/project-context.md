@@ -1,6 +1,14 @@
-# Project context — Reddit Summarizer (context file, 2026-11-09, updated 2026-11-11 post-#25/#27)
+# Project context — Reddit Summarizer (context file, 2026-11-09, updated 2026-11-13 post-#27 + README rewrite)
 
 Mental model of the whole repo. Keep this in mind before making changes; verify against code, it may drift.
+
+## Current state (session hand-off, 2026-11-13)
+
+- Done: #25 language tables (`shared/languages.ts`), #26 language selects apply instantly (no Save/Test gate), #27 "Based on N comments." line moved out of the model contract and rendered client-side from the scraped count (`based_on_comments` + `{n}`, `commentCount` through cache/showModal/createReactionSection), OUTPUT LANGUAGE block moved to prompt tail, `rs_ui` v2, README rewritten compact (badges + nav + screenshots first) and accuracy-checked (only button/modal are localized — popup & settings stay English).
+- Pending/verify by user (no Playwright in repo env, no browser testing here): localized count lines visible per language in the modal; language-only Save now grays the button on FIRST click (`extension/public/settings.ts` ~line 539 `persistUiLanguage(() => { updateSaveState(); setStatus(...) })`).
+- Known model-side issue (not an extension bug): local qwen-CODER variants answer summaries in English even when `language` is set — cloud and local send the byte-identical shared prompt (verified), but coder-tuned models ignore mid/late OUTPUT LANGUAGE directives and parrot the all-English schema examples. Mitigations if it keeps happening: use non-coder qwen3 base/instruct variants in LM Studio, or accept English for coder models. Don't "fix" this in the extension.
+- Non-Latin file edits (languages.ts etc.) MUST go through Node `.cjs` scripts run from the repo root (literal CJK/Arabic in edit tools or PowerShell inline args gets mangled in this Windows env); gtx v4 = `google-translate-api-x` at root node_modules, call `gtx.translate(text, { to })`, result on `.text`.
+- Plans live in `.opencode/plans/` with `#N` prefix; latest are #25-multi-language-plan.md and the plan-less #27 work (prompt-tail + count-line). Manifests say `1.8.0` (README badges match).
 
 ## What it is
 
@@ -40,7 +48,7 @@ A browser extension (Chromium + Gecko/Firefox) that injects an "AI Summary" butt
 - `routes/summarize.ts` — validates/sanitizes: body sliced to 8k, comments ≤100 × 500 chars, but **title length is unvalidated** (known audit finding). Tries providers in order groq → google → anthropic, first success wins and `setProvider(request, name)` tags the request for logging; all-fail ⇒ 500.
 - `services/groq-ai-prompt.ts`, `gemini-ai-prompt.ts`, `claude-ai-prompt.ts` — each builds the shared prompt, calls its SDK (models: `openai/gpt-oss-20b`, `gemini-2.5-flash`, `claude-haiku-4-5`), parses raw JSON out of the model text (groq strips `<think>` blocks/code fences), injects `aiModel` label.
 - `services/buildPrompt.ts` — the whole contract lives here: strict JSON schema, hard word caps (post ≤80 words/5 sentences, community ≤30w, breakdown exactly 1 sentence ≤20w, subredditDescription ≤12w), "u/handle first then OP" rule, [deleted] author rule, no-invention rule. #27: the "Based on X comments." suffix is no longer the model's job — the add-on renders it from the real count — so the breakdown is one plain sentence. Prompt tuning = edit here.
-- `services/requestLog.ts` — the JSON file is the single source of truth (no in-memory cache, reads are `readFileSync` on every call). Writes go through a serialized promise chain (`runAtomic`) to avoid interleaving; MAX_ENTRIES=500 (sized to cover a 90-day dashboard window). Holds `dailyCounters {day, server, perIp}` with UTC-day rollover. `getStats()` aggregates everything server-side (byDay/byHour/byStatus/byProvider/top lists/word stats). `clientIp()` takes leftmost XFF for _logging_ (spoofable — known HIGH finding in `security-audit-plan.md`).
+- `services/requestLog.ts` — the JSON file is the single source of truth (no in-memory cache, reads are `readFileSync` on every call). Writes go through a serialized promise chain (`runAtomic`) to avoid interleaving; MAX*ENTRIES=500 (sized to cover a 90-day dashboard window). Holds `dailyCounters {day, server, perIp}` with UTC-day rollover. `getStats()` aggregates everything server-side (byDay/byHour/byStatus/byProvider/top lists/word stats). `clientIp()` takes leftmost XFF for \_logging* (spoofable — known HIGH finding in `security-audit-plan.md`).
 - `public/summary-logs/` — hand-rolled dashboard (`stats.html`, `script.js`, `style.css`), key first passed via `?key=` then kept in `sessionStorage`, sent as `?key=` on fetches. Static assets are served **before** the key check (deliberate).
 
 ## Log-view endpoints (all need `LOG_VIEW_KEY`)
