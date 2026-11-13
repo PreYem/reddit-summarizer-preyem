@@ -6,9 +6,9 @@
 ![Chromium](https://img.shields.io/badge/Chromium-supported-3988ff)
 ![Gecko](https://img.shields.io/badge/Firefox%20%2F%20Gecko-supported-ff7139)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
-![Languages](https://img.shields.io/badge/languages-11-4[Features](#features) · [Requirements](#requirements) · [Setup](#setup) · [Stats dashboard](#stats-dashboard) · [Good to know](#good-to-know) · [Privacy](#privacy-support-and-credits)
+![Languages](https://img.shields.io/badge/languages-11-0e8a16)
 
-<!-- Add the Chrome Web Store / Firefox Add-ons / Edge Add-ons install links here once the listings are approved. -->
+[Features](#features) · [Requirements](#requirements) · [Setup](#setup) · [Stats dashboard](#stats-dashboard) · [Good to know](#good-to-know) · [Privacy](#privacy-support-and-credits)
 
 ![An AI summary of a Reddit post, shown in a modal over the thread](extension/public/store-screenshots/summary_01.png)
 
@@ -103,9 +103,6 @@ It shows KPIs, a daily usage chart (7d/30d/90d), status mix, provider split, hou
 - **Found a bug?** [Open an issue](https://github.com/PreYem/reddit-summarizer-preyem/issues).
 - **Like it?** Optional contributions help support future updates and keep the extension free: [paypal.me/preyem](https://paypal.me/preyem).
 
-<div align="center">
-<sub>Built by <a href="https://preyem.me/">PreYem</a> · <a href="https://github.com/PreYem">GitHub</a> · <a href="https://gitlab.com/PreYem">GitLab</a></sub>
-</div>
-ions help support future updates and keep the extension free: [paypal.me/preyem](https://paypal.me/preyem).
+---
 
 Built by [PreYem](https://preyem.me/) · [GitHub](https://github.com/PreYem) · [GitLab](https://gitlab.com/PreYem)
