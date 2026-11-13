@@ -1,4 +1,5 @@
 import { buildPrompt } from "../../shared/buildPrompt";
+import { matchLang, sanitizeLang } from "../../shared/languages";
 import type { SummarizeRequest, SummarizeResponse } from "../../shared/types";
 
 // #18 (rework): own-API/local modes hand the prompt to the extension's background page,
@@ -10,6 +11,13 @@ export const SETTINGS_KEY = "rs_settings";
 // #21 v3: { v, activeKey, slots } — each source ("api:openai", "local:ollama", ...) keeps
 // its own endpoint/key/model/think so switching sources never clobbers another's fields - PreYem
 export const SETTINGS_VERSION = 3;
+
+// #25: add-on language state is a separate key so changing a language never invalidates
+// saved settings under rs_settings. First load persists browser-default languages.
+// #26: v2 collapses the two languages into ONE preferred language that drives both the
+// add-on UI and the summary output; the settings page itself stays frozen English.
+export const UI_STORAGE_KEY = "rs_ui";
+export const UI_VERSION = 2;
 
 export interface LocalSettings {
   v: number;
@@ -112,6 +120,40 @@ export function readSettings(): Promise<LocalSettings | null> {
         }
       }
       resolve(settings);
+    });
+  });
+}
+
+// #26: single preferred language (drives add-on UI + summary output). Missing/invalid
+// values are repaired and persisted so the first install defaults to the browser language
+// once; afterwards only Save-gated settings edits change it - PreYem
+function defaultPreferredLanguage(): string {
+  return matchLang(navigator?.language || "") || "en";
+}
+
+function persistedPreferredLanguage(saved: any): string | null {
+  if (!saved || saved.v !== UI_VERSION) return null;
+  const language = typeof saved.preferredLanguage === "string" ? sanitizeLang(saved.preferredLanguage) : null;
+  return language || null;
+}
+
+function persistPreferredLanguage(language: string): void {
+  try {
+    chrome.storage.local.set({ [UI_STORAGE_KEY]: { v: UI_VERSION, preferredLanguage: language } }, () => {
+      void chrome.runtime.lastError;
+    });
+  } catch {
+    // Ignore language persistence failures; the caller can still use the returned defaults. - PreYem
+  }
+}
+
+export function readPreferredLanguage(): Promise<string> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(UI_STORAGE_KEY, (data: any) => {
+      const saved = chrome.runtime.lastError ? null : data[UI_STORAGE_KEY];
+      const language = persistedPreferredLanguage(saved) ?? defaultPreferredLanguage();
+      if (chrome.runtime.lastError || !persistedPreferredLanguage(saved)) persistPreferredLanguage(language);
+      resolve(language);
     });
   });
 }

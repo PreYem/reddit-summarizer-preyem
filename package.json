@@ -11,5 +11,8 @@
   "devDependencies": {
     "concurrently": "^10.0.3"
   },
-  "version": "1.3.0"
+  "version": "1.3.0",
+  "dependencies": {
+    "google-translate-api-x": "^10.7.3"
+  }
 }

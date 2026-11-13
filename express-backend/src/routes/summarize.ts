@@ -3,7 +3,8 @@ import { summarize as AnthropicSummarizer } from "../services/claude-ai-prompt";
 import { summarize as GeminiSummarizer } from "../services/gemini-ai-prompt";
 import { summarize as GroqSummarizer } from "../services/groq-ai-prompt";
 import type { SummarizeRequest, SummarizeResponse } from "../types";
-import { setProvider } from "../services/requestLog";
+import { setProvider, setRequestLanguage } from "../services/requestLog";
+import { sanitizeLang } from "../services/languages";
 
 const router = Router();
 
@@ -13,13 +14,14 @@ export function debugModeEnabled(): boolean {
 
 // Static canned response so local testing doesn't burn API tokens - PreYem
 function debugResponse(payload: SummarizeRequest): SummarizeResponse {
+  const debugLanguage = payload.language ?? "en";
   return {
     aiModel: "debug-static",
-    subredditDescription: `r/${payload.currentSubreddit} is a test subreddit used in debug mode.`,
-    post: `[DEBUG] ${payload.title} - static placeholder body for ${payload.author}.`,
-    community: "[DEBUG] Static community summary: top comments would normally be summarized here.",
+    subredditDescription: `r/${payload.currentSubreddit} is a test subreddit used in debug mode [${debugLanguage}].`,
+    post: `[DEBUG:${debugLanguage}] ${payload.title} - static placeholder body for ${payload.author}.`,
+    community: `[DEBUG:${debugLanguage}] Static community summary: top comments would normally be summarized here.`,
     communityReaction: "Mixed",
-    communityReactionBreakdown: "[DEBUG] Static breakdown text for the reaction section.",
+    communityReactionBreakdown: `[DEBUG:${debugLanguage}] Static breakdown text for the reaction section.`,
   };
 }
 
@@ -27,13 +29,7 @@ const MAX_BODY_LENGTH = 8_000;
 const MAX_COMMENT_LENGTH = 500;
 const MAX_COMMENTS = 100;
 
-type SummarizerFn = (input: {
-  title: string;
-  body: string;
-  comments: string[];
-  currentSubreddit: string;
-  author: string;
-}) => Promise<SummarizeResponse>;
+type SummarizerFn = (input: SummarizeRequest) => Promise<SummarizeResponse>;
 
 // Order = priority. First one wins if it succeeds - PreYem
 const PROVIDERS: { name: string; fn: SummarizerFn }[] = [
@@ -43,7 +39,8 @@ const PROVIDERS: { name: string; fn: SummarizerFn }[] = [
 ];
 
 router.post("/", async (request: Request, response: Response) => {
-  const { title, body, comments, currentSubreddit, author } = request.body as SummarizeRequest;
+  const incoming = request.body as SummarizeRequest;
+  const { title, body, comments, currentSubreddit, author } = incoming;
 
   if (!title || typeof title !== "string") {
     response.status(400).json({ error: "title is required" });
@@ -60,14 +57,17 @@ router.post("/", async (request: Request, response: Response) => {
 
   const safeSubreddit = typeof currentSubreddit === "string" && currentSubreddit ? currentSubreddit : "unknown";
   const safeAuthor = typeof author === "string" && author ? author : "[deleted]";
+  const requestedLanguage = sanitizeLang(typeof incoming.language === "string" ? incoming.language : "");
 
-  const payload = {
+  const payload: SummarizeRequest = {
     title,
     body: bodyText,
     comments: sanitizedComments,
     currentSubreddit: safeSubreddit,
     author: safeAuthor,
   };
+  if (requestedLanguage !== "en") payload.language = requestedLanguage;
+  setRequestLanguage(request, requestedLanguage);
 
   console.log("Post to Summarize :");
   console.log(JSON.stringify(payload, null, 2));

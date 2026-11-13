@@ -5,6 +5,7 @@ export interface SummarizeRequest {
   author: string;
   comments: string[];
   postUrl?: string;
+  language?: string;
 }
 
 export interface SummarizeResponse {

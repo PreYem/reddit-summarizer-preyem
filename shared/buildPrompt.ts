@@ -1,7 +1,27 @@
 // #18: lives in shared/ so the backend and the extension both compile the identical
 // prompt — cloud and local modes send byte-identical text - PreYem
-export function buildPrompt(data: { currentSubreddit: string; author: string; title: string; body?: string; comments: string[] }): string {
+// #26: single preferred language drives BOTH the add-on UI and the summary output.
+// #25 bug: languageBlock was built but never interpolated into the returned prompt —
+// every cloud/local request silently demanded English regardless of settings.
+// #26: the block now lives directly under the schema in imperative form; soft trailing
+// suggestions were ignored by gpt-oss/Gemini/Claude. Cloud and local stay byte-identical.
+// #27: the "Based on X comments." suffix moved OUT of the model contract — the add-on now
+// renders it itself from uiText("based_on_comments") + {n}, so models no longer inconsistently
+// drop/translate/miscount it. OUTPUT LANGUAGE also moved to the prompt tail: coder models
+// (qwen-coder via local servers) ignored the mid-prompt directive and answered in English.
+import type { SummarizeRequest } from "./types";
+import { langName } from "./languages";
+
+export function buildPrompt(data: SummarizeRequest): string {
   const comments = data.comments.slice(0, 100);
+  const languageName = langName(data.language ?? "en");
+  const languageBlock = languageName
+    ? `
+    OUTPUT LANGUAGE (MANDATORY):
+    - Every free-text value ("post", "community", "communityReactionBreakdown", "subredditDescription") MUST be written entirely in ${languageName}.
+    - Returning those fields in English or any other language is a contract violation and an invalid answer.
+    - "communityReaction" MUST remain exactly one of the English labels listed below, never translated.`
+    : "";
 
   return `
     You are a strict Reddit post summarizer.
@@ -33,17 +53,16 @@ export function buildPrompt(data: { currentSubreddit: string; author: string; ti
       - "Overwhelmingly Negative" = very critical of OP (+90% of comments)
       - "Mixed" = strong split between support and criticism
       - "Inconclusive" = too few or unclear comments
-    - "communityReactionBreakdown": One sentence (max 20 words) explaining the reaction, followed by the comment count only if comments.length is above 0, where X is ${comments.length}.
-    If there are no comments, do NOT include "Based on X comments." at the end.
-    Always follow the exact format when there are comments: "<one sentence explanation>. Based on X comments."
+    - "communityReactionBreakdown": exactly 1 sentence (max 20 words) explaining the reaction. Do NOT mention comment counts or write "Based on X comments" — the add-on renders that line itself.
     Examples of valid output:
-    - "The community largely agrees with OP and shares similar experiences. Based on 14 comments."
-    - "There are too few comments to determine a clear community reaction. Based on 2 comments."
-    - "Commenters are sharply divided, with roughly equal amounts of support and criticism. Based on 30 comments."
-    - "Most commenters criticize OP's decision and disagree with their reasoning. Based on 21 comments."
+    - "The community largely agrees with OP and shares similar experiences."
+    - "There are too few comments to determine a clear community reaction."
+    - "Commenters are sharply divided, with roughly equal amounts of support and criticism."
+    - "Most commenters criticize OP's decision and disagree with their reasoning."
     - "subredditDescription": One sentence (max 12 words) describing what the subreddit is about.
         Always follow the exact format: " ${data.currentSubreddit} is <1 sentence, max 12 words, explaining what the subreddit is about>."
 
+    ${languageBlock}
     Important constraints:
     - Refer to the author as u/${data.author} at the start of the summary and refer to them as OP in future sentences.
       Example: u/JohnDoe asks ..., then OP explains which is ... - always start with the u/ handle, then switch to OP.

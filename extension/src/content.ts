@@ -2,10 +2,47 @@
 
 import { fetchSummary, cancelInFlight, cancelStaleCall } from "./api";
 import { createButton, showModal, showErrorModal, setButtonState, getCachedSummary, setCachedSummary } from "./summaryModal";
-import { CancelledError, LocalSummarizeError, readSettings } from "./localLlm";
+import { CancelledError, LocalSummarizeError, readPreferredLanguage, readSettings } from "./localLlm";
+import { isRtl, uiText } from "@shared/languages";
+import type { SummarizeRequest } from "@shared/types";
+
+// #26: ONE preferred language drives both the add-on UI (button/live region/modals) and
+// the summary output language, so the two can never drift apart again - PreYem
+let currentLanguage = "en";
+let uiButton: HTMLButtonElement | null = null;
+let uiLiveRegion: HTMLElement | null = null;
+let uiState: "idle" | "loading" | "done" = "idle";
+let uiLiveKey: string | null = null;
+
+function setLiveUiText(key: string | null) {
+  uiLiveKey = key;
+  if (uiLiveRegion) {
+    uiLiveRegion.textContent = key ? uiText(currentLanguage, key) : "";
+    uiLiveRegion.setAttribute("dir", isRtl(currentLanguage) ? "rtl" : "ltr");
+  }
+}
+
+// #25: repaint is idempotent — writing textContent inside the observed body subtree is
+// itself a mutation, so an unconditional repaint on every MutationObserver callback re-triggers
+// the observer forever (tab freeze/crash). Skip DOM writes while (state|language|liveKey)
+// already matches the last repaint - PreYem
+let lastRepaintKey: string | null = null;
+
+function repaintUiButton() {
+  const key = `${uiState}|${currentLanguage}|${uiLiveKey}`;
+  if (key === lastRepaintKey) return;
+  lastRepaintKey = key;
+  if (uiButton) setButtonState(uiButton, uiState, currentLanguage);
+  setLiveUiText(uiLiveKey);
+}
+
+void readPreferredLanguage().then((language) => {
+  currentLanguage = language;
+  repaintUiButton();
+});
 
 // Function to scrab the post for data processing to be sent to the backend - PreYem
-function scrapePost() {
+function scrapePost(): SummarizeRequest | null {
   // Grabbing the HTML tag containing the post - PreYem
   const postEl = document.querySelector("shreddit-post");
 
@@ -49,7 +86,15 @@ function scrapePost() {
     .filter(Boolean)
     .slice(0, 100);
 
-  return { currentSubreddit, title, body, author, comments, postUrl };
+  return {
+    currentSubreddit,
+    title,
+    body,
+    author,
+    comments,
+    postUrl,
+    ...(currentLanguage === "en" ? {} : { language: currentLanguage }),
+  };
 }
 
 // Grace period: after this many ms of observed DOM mutations on a post page where the
@@ -66,13 +111,19 @@ function inject(insertParent: Element, refChild: Node | null) {
   console.log("[RS] inject:", window.location.pathname);
 
   // Creating the button - PreYem
-  const injectedSummaryButton = createButton();
-  injectedSummaryButton.setAttribute("aria-label", "Summarize this Reddit post with AI");
+  const injectedSummaryButton = createButton(currentLanguage);
+  uiButton = injectedSummaryButton;
+  uiState = "idle";
 
   // aria-live region so loading/error states are announced to screen readers - PreYem
   const liveRegion = document.createElement("div");
   liveRegion.className = "rs-live-region";
   liveRegion.setAttribute("aria-live", "polite");
+  uiLiveRegion = liveRegion;
+  uiLiveKey = null;
+  // #25: force the first repaint for the freshly injected elements (aria-label + initial state) - PreYem
+  lastRepaintKey = null;
+  repaintUiButton();
 
   // Shared activation path for pointer clicks and Enter/Space keyboard presses - PreYem
   // The guard also swallows the UA-synthesized click that follows keyboard activation,
@@ -94,23 +145,28 @@ function inject(insertParent: Element, refChild: Node | null) {
       // fingerprint the current source (mode+model) and only reuse a cached summary
       // while the fingerprint matches — otherwise re-summarize with the new settings - PreYem
       const currentSettings = await readSettings();
+      currentLanguage = await readPreferredLanguage();
+      repaintUiButton();
+      // #26: the language is part of the fingerprint so a language change invalidates the
+      // cached summary instead of re-showing it untranslated - PreYem
       const settingsFingerprint =
         currentSettings && currentSettings.mode !== "cloud"
-          ? `${currentSettings.mode}|${currentSettings.model || ""}`
-          : "cloud";
+          ? `${currentSettings.mode}|${currentSettings.model || ""}|${currentLanguage}`
+          : `cloud|${currentLanguage}`;
       const cachedSummary = getCachedSummary();
       // If summary is still cached AND produced by the current settings, show it again
       // to avoid unnecessary API calls - PreYem
       if (cachedSummary && cachedSummary.settingsFingerprint === settingsFingerprint) {
         const data = scrapePost();
-        showModal(cachedSummary.response, data?.author ?? "[deleted]", cachedSummary.elapsedMs, cachedSummary.mode); // Pass author + original fetch duration + mode
+        showModal(cachedSummary.response, data?.author ?? "[deleted]", cachedSummary.elapsedMs, cachedSummary.mode, currentLanguage, cachedSummary.commentCount); // Pass author + original fetch duration + mode + UI language + #27 original comment count
         return;
       }
 
       // If no cachedSummary is found, we call the backend and send the correct data.
-      setButtonState(injectedSummaryButton, "loading");
-      liveRegion.textContent = "Summarizing this post with AI";
+      uiState = "loading";
+      uiLiveKey = "live_loading";
       busy = true;
+      repaintUiButton();
 
       try {
         // Calling the scrap function to get the data then send it rather than scrap when page loads - PreYem
@@ -126,15 +182,16 @@ function inject(insertParent: Element, refChild: Node | null) {
         const elapsedMs = Date.now() - startedAt;
 
         // Saving the result in the cache function for future use if user is still on the same post page - PreYem
-        setCachedSummary(result.response, elapsedMs, result.mode, settingsFingerprint);
+        setCachedSummary(result.response, elapsedMs, result.mode, settingsFingerprint, data.comments.length);
 
         // #23: summary now in memory — button flips to "Show Summary" so a later click
         // re-opens the modal from cache instead of re-summarizing - PreYem
-        setButtonState(injectedSummaryButton, "done");
-        liveRegion.textContent = "Summary ready.";
+        uiState = "done";
+        uiLiveKey = "live_done";
+        repaintUiButton();
 
         // Opening the summary modal with the summary data coming from the backend - PreYem
-        showModal(result.response, data.author, elapsedMs, result.mode); // Pass author + duration + mode here
+        showModal(result.response, data.author, elapsedMs, result.mode, currentLanguage, data.comments.length); // Pass author + duration + mode + UI language + #27 comment count
       } catch (error) {
         // #20 cancellation (page left / URL changed mid-flight): stay silent, the
         // request was intentionally stopped — not a user-facing failure - PreYem
@@ -143,8 +200,9 @@ function inject(insertParent: Element, refChild: Node | null) {
         if (error instanceof CancelledError) {
           const cancelledByUser = userCancel;
           userCancel = false;
-          setButtonState(injectedSummaryButton, "idle");
-          liveRegion.textContent = cancelledByUser ? "Summary cancelled. Click the button again to retry." : "";
+          uiState = "idle";
+          uiLiveKey = cancelledByUser ? "live_cancelled" : null;
+          repaintUiButton();
           return;
         }
         // In case errors come up during backend call - PreYem
@@ -152,13 +210,20 @@ function inject(insertParent: Element, refChild: Node | null) {
         // #21: no error state on the button — the failure gets its own error modal (same
         // animation + ESC close as the summary modal). Closing it leaves the button idle
         // and clickable for a retry; errors are deliberately NOT cached in memory - PreYem
-        setButtonState(injectedSummaryButton, "idle");
-        liveRegion.textContent = "";
+        uiState = "idle";
+        uiLiveKey = null;
+        repaintUiButton();
         if (error instanceof LocalSummarizeError) {
-          showErrorModal(error.provider, error.model, error.kind, error.message);
+          showErrorModal(error.provider, error.model, error.kind, error.message, currentLanguage);
         } else {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          showErrorModal("Cloud backend", "Backend server", "Backend error", errorMessage || "Failed to summarize | Backend server issue, try again later.");
+          showErrorModal(
+            uiText(currentLanguage, "err_cloud_backend"),
+            uiText(currentLanguage, "err_backend_server"),
+            uiText(currentLanguage, "err_backend_error"),
+            errorMessage || uiText(currentLanguage, "err_generic"),
+            currentLanguage,
+          );
         }
       }
     } finally {
@@ -209,6 +274,11 @@ function inject(insertParent: Element, refChild: Node | null) {
 // Post page: try to inject the button, waiting for the anchor via observer callbacks - PreYem
 function tryInject() {
   // Duplicate injection impossible: idempotent check stays first - PreYem
+  // #25: cheap O(1) isConnected check runs as the idempotency guard's fast path, and the
+  // pathname bail-out precedes the document-wide fallback scan so home/feed pages don't
+  // pay a full DOM query on every mutation - PreYem
+  if (uiButton?.isConnected) return;
+  if (!window.location.pathname.includes("/comments/")) return;
   if (document.querySelector(".rs-btn")) return;
 
   // Feed pages still get no button (pathname guard) - PreYem
@@ -217,15 +287,11 @@ function tryInject() {
   const postEl = document.querySelector("shreddit-post");
   if (!postEl) return;
 
-  // #23: strict single-post guard — a page is "the post's page" only when its pathname
-  // is that post's permalink. The loose /comments/ substring above also matched profile
-  // comment feeds (/u/<user>/comments/), where every comment card embeds a shreddit-post
-  // and used to get a stray button mid-feed - PreYem
-  const permalink = postEl.getAttribute("permalink");
-  if (permalink) {
-    const permalinkPath = permalink.replace(/\/+$/, "");
-    if (window.location.pathname !== permalinkPath && !window.location.pathname.startsWith(permalinkPath + "/")) return;
-  }
+  // #23 guard replaced (#27): any /r/<sub>/comments/<...> URL qualifies as a post page,
+  // including comment deep links (/r/<sub>/comments/<id>/<slug>/<commentId>/?context=3) that
+  // the old permalink-prefix check rejected. Profile comment feeds (/u/<user>/comments/,
+  // /users/...) still get no button because the first path segment must be exactly "r" - PreYem
+  if (!/\/r\/[^/]+\/comments\//i.test(window.location.pathname)) return;
 
   // Primary anchor: the ... overflow menu, button injected right next to it - PreYem
   const overflowMenu = postEl.querySelector("shreddit-post-overflow-menu");
@@ -264,6 +330,7 @@ tryInject();
 // left (or back-nav happened), so CANCEL aborts it before re-checking the anchor - PreYem
 new MutationObserver(() => {
   cancelStaleCall();
+  repaintUiButton();
   tryInject();
 }).observe(document.body, { childList: true, subtree: true });
 

@@ -9,6 +9,7 @@ declare global {
   namespace Express {
     interface Request {
       loggedProvider?: string;
+      loggedLanguage?: string;
     }
   }
 }
@@ -27,6 +28,7 @@ export interface RequestLogEntry {
   path: string;
   status: number;
   provider?: string;
+  language?: string;
   post: {
     title: string;
     bodyPreview: string;
@@ -288,4 +290,9 @@ export function clientIp(request: Request): string {
 
 export function setProvider(request: Request, provider: string): void {
   request.loggedProvider = provider;
+}
+
+// #25: summaryLanguage is logged only when it's a whitelisted non-English code; English stays absent so old logs remain byte-comparable - PreYem
+export function setRequestLanguage(request: Request, language: string): void {
+  request.loggedLanguage = language === "en" ? undefined : language;
 }

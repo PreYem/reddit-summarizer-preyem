@@ -4,6 +4,11 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [tailwindcss()],
+  resolve: {
+    alias: {
+      "@shared": resolve(__dirname, "../shared"),
+    },
+  },
   build: {
     outDir: 'dist',
     rollupOptions: {

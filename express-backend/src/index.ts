@@ -93,6 +93,7 @@ function requestLogMiddleware(request: express.Request, response: express.Respon
       path: request.path,
       status: response.statusCode,
       provider: request.loggedProvider,
+      language: request.loggedLanguage,
       post:
         body && typeof body.title === "string"
           ? {

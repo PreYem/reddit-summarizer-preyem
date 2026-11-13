@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Reddit Summarizer",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Summarize Reddit posts with AI",
   "permissions": ["storage"],
   "options_ui": {

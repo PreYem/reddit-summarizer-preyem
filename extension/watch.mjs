@@ -8,8 +8,11 @@ function copyPublicFiles(target) {
   for (const file of ["popup.html", "settings.html", "styles.css", "popup.css"]) {
     copyFileSync(`public/${file}`, `${dist}/${file}`);
   }
+  // #25: shared/languages.ts is transpiled to a classic-script global for settings.js/popup.js - PreYem
+  const languagesJs = transpile(readFileSync("../shared/languages.ts", "utf8"), { target: ScriptTarget.ES2020 }).replace(/^export /gm, "");
+  writeFileSync(`${dist}/languages.js`, languagesJs);
   // #24: TS-authored public pages are transpiled to plain JS at copy time - PreYem
-  for (const name of ["background", "settings"]) {
+  for (const name of ["background", "settings", "popup"]) {
     const js = transpile(readFileSync(`public/${name}.ts`, "utf8"), { target: ScriptTarget.ES2020 });
     writeFileSync(`${dist}/${name}.js`, js);
   }
@@ -50,6 +53,11 @@ watcher.on("event", (event) => {
 });
 
 watch("public", () => {
+  copyPublicFiles("chromium");
+  copyPublicFiles("gecko");
+});
+
+watch("../shared", () => {
   copyPublicFiles("chromium");
   copyPublicFiles("gecko");
 });

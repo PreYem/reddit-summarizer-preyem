@@ -28,12 +28,12 @@
 
             <img src="icons/icon-512.png" />
           </span>
-          <h1 class="text-lg font-bold leading-none text-[#ff4500]">Reddit Summarizer Settings</h1>
+          <h1 data-rs="st_title" class="text-lg font-bold leading-none text-[#ff4500]">Reddit Summarizer Settings</h1>
         </div>
-        <span class="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/35">v1.7.0</span>
+        <span class="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/35">v1.8.0</span>
       </header>
 
-      <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
+      <p data-rs="st_intro" class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
         Choose where summaries come from: the cloud backend (default), your AI Cloud Provider with your API key (OpenAI, Anthropic or any
         OpenAI-compatible service), or a locally hosted model on your machine or network.
       </p>
@@ -43,16 +43,16 @@
       <section class="flex flex-col gap-5 rounded-xl border border-white/7 bg-white/3 p-5">
         <!-- Source -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-[12.5px] font-semibold text-white/85" for="rs-mode">Source</label>
-          <p class="text-[11px] text-white/40">Where post date is sent to be summarized.</p>
+          <label data-rs="lbl_source" class="text-[12.5px] font-semibold text-white/85" for="rs-mode">Source</label>
+          <p data-rs="hint_source" class="text-[11px] text-white/40">Where post date is sent to be summarized.</p>
           <div class="relative">
             <select
               id="rs-mode"
               class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
             >
-              <option value="cloud">Reddit Summarizer's Backend - No setup is required</option>
-              <option value="api">Your AI Cloud Provider - Your Own API Key</option>
-              <option value="local">Locally LLM - Nothing leaves your machine</option>
+              <option value="cloud" data-rs="opt_mode_cloud">Reddit Summarizer's Backend - No setup is required</option>
+              <option value="api" data-rs="opt_mode_api">Your AI Cloud Provider - Your Own API Key</option>
+              <option value="local" data-rs="opt_mode_local">Locally LLM - Nothing leaves your machine</option>
             </select>
             <svg
               class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
@@ -72,7 +72,7 @@
 
         <!-- AI Cloud Provider section: provider only -->
         <div id="sec-api" hidden class="flex flex-col gap-1.5">
-          <label class="text-[12.5px] font-semibold text-white/85" for="rs-provider">Cloud Provider</label>
+          <label data-rs="lbl_provider" class="text-[12.5px] font-semibold text-white/85" for="rs-provider">Cloud Provider</label>
           <div class="relative">
             <select
               id="rs-provider"
@@ -100,7 +100,7 @@
 
         <!-- Local section: flavor only -->
         <div id="sec-local" hidden class="flex flex-col gap-1.5">
-          <label class="text-[12.5px] font-semibold text-white/85" for="rs-flavor">API flavor</label>
+          <label data-rs="lbl_flavor" class="text-[12.5px] font-semibold text-white/85" for="rs-flavor">API flavor</label>
           <div class="relative">
             <select
               id="rs-flavor"
@@ -127,7 +127,7 @@
 
         <!-- Endpoint: OpenAI-compatible custom + local servers -->
         <div id="sec-server" hidden class="flex flex-col gap-1.5">
-          <label class="text-[12.5px] font-semibold text-white/85" for="rs-endpoint">Endpoint URL</label>
+          <label data-rs="lbl_endpoint" class="text-[12.5px] font-semibold text-white/85" for="rs-endpoint">Endpoint URL</label>
           <input
             id="rs-endpoint"
             type="text"
@@ -139,8 +139,8 @@
 
         <!-- Key: required for AI Cloud Provider, optional for local servers -->
         <div id="sec-key" hidden class="flex flex-col gap-1.5">
-          <label class="text-[12.5px] font-semibold text-white/85" for="rs-api-key">API key</label>
-          <p class="text-[11px] text-white/40">
+          <label data-rs="lbl_api_key" class="text-[12.5px] font-semibold text-white/85" for="rs-api-key">API key</label>
+          <p data-rs="hint_privacy" class="text-[11px] text-white/40">
             Your API keys are never collected or stored by us. With cloud providers, your API key and post data are sent directly to your chosen
             provider. With local models, all data stays on your machine.
           </p>
@@ -198,8 +198,8 @@
 
         <!-- Model: read from the server, never typed -->
         <div id="sec-model" hidden class="flex flex-col gap-1.5">
-          <label class="text-[12.5px] font-semibold text-white/85" for="rs-model">Model</label>
-          <p class="text-[11px] text-white/40">Read from your server. If the list is empty, use Test connection.</p>
+          <label data-rs="lbl_model" class="text-[12.5px] font-semibold text-white/85" for="rs-model">Model</label>
+          <p data-rs="hint_model" class="text-[11px] text-white/40">Read from your server. If the list is empty, use Test connection.</p>
           <div class="relative">
             <select
               id="rs-model"
@@ -224,8 +224,8 @@
         <!-- Thinking: sits under the model. Local only; ollama gets only None/On options
              (settings.js rebuilds the options per flavor, "On" stores low => think:true) - PreYem -->
         <div id="sec-think" hidden class="flex flex-col gap-1.5">
-          <label class="text-[12.5px] font-semibold text-white/85" for="rs-think">Thinking</label>
-          <p class="text-[11px] text-white/40">Extra reasoning before answering. Off is fastest, and summaries rarely need it.</p>
+          <label data-rs="lbl_think" class="text-[12.5px] font-semibold text-white/85" for="rs-think">Thinking</label>
+          <p data-rs="hint_think" class="text-[11px] text-white/40">Extra reasoning before answering. Off is fastest, and summaries rarely need it.</p>
           <div class="relative">
             <select
               id="rs-think"
@@ -259,6 +259,7 @@
         <div class="flex gap-2.5">
           <button
             id="rs-save"
+            data-rs="btn_save"
             disabled
             class="cursor-pointer rounded-md border border-[#3988ff] bg-[#3988ff] px-4 py-2 text-[12.5px] font-semibold text-white transition-colors enabled:hover:bg-[#4a95ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/6 disabled:text-white/30"
           >
@@ -266,12 +267,14 @@
           </button>
           <button
             id="rs-test"
+            data-rs="btn_test"
             class="cursor-pointer rounded-md border border-[#ff4500]/50 bg-[#ff4500]/10 px-4 py-2 text-[12.5px] font-semibold text-[#d7dadc] transition-colors hover:bg-[#ff4500]/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff4500]"
           >
             Test connection
           </button>
           <button
             id="rs-reset"
+            data-rs="btn_reset"
             class="cursor-pointer rounded-md border border-white/15 bg-white/6 px-4 py-2 text-[12.5px] font-semibold text-[#d7dadc] transition-colors hover:bg-white/12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3988ff]"
           >
             Reset
@@ -282,6 +285,33 @@
         <div class="rounded-md border border-white/7 bg-black/20 px-3 py-2.5">
           <p id="rs-status" class="text-[11.5px] leading-normal text-white/45">No settings saved yet - cloud mode in use.</p>
         </div>
+
+        <!-- #26: ONE preferred language for the whole add-on (button, live region, modals,
+             summary output), kept apart from the connection controls at the bottom. Static
+             English label — the settings page never translates. Apply it then press Save - PreYem -->
+        <div id="sec-lang" class="flex flex-col gap-1.5">
+          <label class="text-[12.5px] font-semibold text-white/85" for="rs-pref-lang">Summarize and translate to this language</label>
+          <p class="text-[11px] text-white/40">One preference for everything: the AI Summary button, the modals and the language the AI writes summaries in. Change it, then press Save. This settings page always stays in English.</p>
+          <div class="relative">
+            <select
+              id="rs-pref-lang"
+              class="w-full appearance-none rounded-md border border-white/10 bg-[#232328] py-2 pl-3 pr-9 text-[13px] text-[#d7dadc] outline-none transition-colors hover:border-white/20 focus:border-[#3988ff] focus:ring-2 focus:ring-[#3988ff]/30"
+            ></select>
+            <svg
+              class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+        </div>
       </section>
 
       <!-- Setup tips: collapsed by default, no JS needed -->
@@ -289,7 +319,7 @@
         <summary
           class="flex cursor-pointer list-none items-center justify-between text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#ff4500] marker:hidden [&::-webkit-details-marker]:hidden"
         >
-          Setup tips
+          <span data-rs="tips_title">Setup tips</span>
           <svg
             class="transition-transform duration-150 group-open:rotate-180"
             viewBox="0 0 24 24"
@@ -305,17 +335,10 @@
           </svg>
         </summary>
         <ul class="mt-3 flex list-disc flex-col gap-2 pl-4 text-[11px] leading-relaxed text-[#ffb3a6] marker:text-[#ff4500]/60">
-          <li>
-            Chromium pre-allows localhost, 127.0.0.1, api.openai.com and api.anthropic.com; any other host asks once for permission on Save/Test.
-          </li>
-          <li>Ollama: start it with OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it, otherwise it answers 403.</li>
-          <li>
-            The prompt includes up to 100 comments - small context windows may choke small models (the extension retries once, then shows an error).
-          </li>
-          <li>
-            Thinking level: sent as reasoning_effort (LM Studio/llama.cpp) or think (Ollama). Ollama only supports off/on - Low/Medium/High aren't
-            offered there; servers that reject these fields are retried once without them.
-          </li>
+          <li data-rs="tip_1">Chromium pre-allows localhost, 127.0.0.1, api.openai.com and api.anthropic.com; any other host asks once for permission on Save/Test.</li>
+          <li data-rs="tip_2">Ollama: start it with OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it, otherwise it answers 403.</li>
+          <li data-rs="tip_3">The prompt includes up to 100 comments - small context windows may choke small models (the extension retries once, then shows an error).</li>
+          <li data-rs="tip_4">Thinking level: sent as reasoning_effort (LM Studio/llama.cpp) or think (Ollama). Ollama only supports off/on - Low/Medium/High aren't offered there; servers that reject these fields are retried once without them.</li>
         </ul>
       </details>
 
@@ -326,11 +349,12 @@
         <div class="h-px bg-white/7"></div>
 
         <p class="text-[11px] leading-relaxed text-white/40">
-          Local mode sends requests directly to your configured server, without passing through our backend. The source code is open:
+          <span data-rs="st_footer_local">Local mode sends requests directly to your configured server, without passing through our backend. The source code is open:</span>
           <a
             href="https://github.com/PreYem/reddit-summarizer-preyem"
             target="_blank"
             rel="noopener noreferrer"
+            data-rs="st_view_github"
             class="text-[#3988ff] no-underline hover:underline"
             >View on GitHub</a
           >.
@@ -340,7 +364,7 @@
 
         <!-- Developer attribution / socials -->
         <div class="flex items-center justify-between">
-          <span class="text-[11px] text-white/30"> Extension made by <span class="font-semibold text-white/50">PreYem</span> </span>
+          <span class="text-[11px] text-white/30"><span data-rs="st_made_by">Extension made by</span> <span class="font-semibold text-white/50">PreYem</span></span>
 
           <div class="flex items-center gap-3">
             <!-- Portfolio -->
@@ -403,6 +427,7 @@
       </footer>
     </main>
 
+    <script src="languages.js"></script>
     <script src="settings.js"></script>
   </body>
 </html>

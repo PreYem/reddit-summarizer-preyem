@@ -1,5 +1,6 @@
 import { createReactionSection } from "./modalReaction";
 import { SummarizeResponse } from "@shared/types";
+import { isRtl, langName, reactionLabel, uiText } from "@shared/languages";
 
 // Caching the summary in memory per post, meaning clicking the AI Summary button and closing the modal and opening it again will bring the same response
 // without sending an API request a second time to avoid Token usage ramping up - PreYem
@@ -8,21 +9,23 @@ import { SummarizeResponse } from "@shared/types";
 // #24: cache value also carries a settings fingerprint (mode+model) so a cached summary is
 // only re-shown while the CURRENT settings match — after Save changes the source, the button
 // re-summarizes with the new settings instead of serving the stale cached modal - PreYem
-const summaryCache = new Map<string, { response: SummarizeResponse; elapsedMs: number; mode: string; settingsFingerprint: string }>();
+// #27: cache also keeps the scraped comment count so the localized "Based on N comments."
+// line survives cache replays - PreYem
+const summaryCache = new Map<string, { response: SummarizeResponse; elapsedMs: number; mode: string; settingsFingerprint: string; commentCount: number }>();
 
-export function getCachedSummary(): { response: SummarizeResponse; elapsedMs: number; mode: string; settingsFingerprint: string } | null {
+export function getCachedSummary(): { response: SummarizeResponse; elapsedMs: number; mode: string; settingsFingerprint: string; commentCount: number } | null {
   return summaryCache.get(window.location.href) ?? null;
 }
 
-export function setCachedSummary(summary: SummarizeResponse, elapsedMs: number, mode: string, settingsFingerprint: string): void {
-  summaryCache.set(window.location.href, { response: summary, elapsedMs, mode, settingsFingerprint });
+export function setCachedSummary(summary: SummarizeResponse, elapsedMs: number, mode: string, settingsFingerprint: string, commentCount: number): void {
+  summaryCache.set(window.location.href, { response: summary, elapsedMs, mode, settingsFingerprint, commentCount });
 }
 
 // #23: "under a second" / "N second(s)" / "N min M s" formatting for the modal footer - PreYem
-function formatElapsed(ms: number): string {
-  if (ms < 1000) return "under a second";
+function formatElapsed(ms: number, uiLanguage: string): string {
+  if (ms < 1000) return uiText(uiLanguage, "t_under");
   const totalSeconds = Math.round(ms / 1000);
-  if (totalSeconds < 60) return `${totalSeconds} second${totalSeconds === 1 ? "" : "s"}`;
+  if (totalSeconds < 60) return `${totalSeconds} ${uiText(uiLanguage, totalSeconds === 1 ? "t_sec_one" : "t_sec_many")}`;
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return seconds ? `${minutes} min ${seconds} s` : `${minutes} min`;
@@ -34,11 +37,12 @@ function getRedditTheme(): "light" | "dark" {
 }
 
 // Button - PreYem
-export function createButton(): HTMLButtonElement {
+export function createButton(uiLanguage = "en"): HTMLButtonElement {
   const btn = document.createElement("button");
 
   btn.className = "rs-btn";
-  btn.textContent = "AI Summary";
+  btn.textContent = uiText(uiLanguage, "btn_idle");
+  btn.setAttribute("dir", isRtl(uiLanguage) ? "rtl" : "ltr");
 
   btn.addEventListener("mousedown", (event) => {
     event.stopPropagation();
@@ -53,16 +57,16 @@ export function createButton(): HTMLButtonElement {
 // button never gets stuck and stays clickable for a fresh attempt
 // #23: "done" state once the summary is in memory — the button then re-opens the
 // modal from cache instead of re-summarizing - PreYem
-export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "done") {
+export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading" | "done", uiLanguage = "en") {
   const labels = {
-    idle: "AI Summary",
-    loading: "Summarizing...",
-    done: "Show Summary",
+    idle: uiText(uiLanguage, "btn_idle"),
+    loading: uiText(uiLanguage, "btn_loading"),
+    done: uiText(uiLanguage, "btn_done"),
   };
   const ariaLabels = {
-    idle: "Summarize this Reddit post with AI",
-    loading: "Summarizing this post, click again to cancel",
-    done: "Show this post's AI summary",
+    idle: uiText(uiLanguage, "aria_idle"),
+    loading: uiText(uiLanguage, "aria_loading"),
+    done: uiText(uiLanguage, "aria_done"),
   };
 
   if (state === "loading") {
@@ -70,18 +74,20 @@ export function setButtonState(btn: HTMLButtonElement, state: "idle" | "loading"
     const spinner = document.createElement("span");
     spinner.className = "rs-btn-spinner";
     btn.appendChild(spinner);
-    btn.appendChild(document.createTextNode(" Summarizing..."));
+    btn.appendChild(document.createTextNode(" " + uiText(uiLanguage, "btn_loading")));
     // A nested <button> inside the <button> is invalid HTML, so the "✕ Cancel" affordance
     // is a styled span; the actual cancel is the click-on-busy-button path (content.ts) - PreYem
     const cancel = document.createElement("span");
     cancel.className = "rs-btn-cancel";
-    cancel.textContent = "\u2715 Cancel";
+    cancel.textContent = uiText(uiLanguage, "btn_cancel");
     btn.appendChild(cancel);
   } else {
     btn.textContent = labels[state];
   }
 
+  btn.setAttribute("dir", isRtl(uiLanguage) ? "rtl" : "ltr");
   btn.setAttribute("aria-label", ariaLabels[state]);
+  btn.dataset.rsState = state;
 
   // #22: never disabled while loading — clicking the busy button cancels the in-flight
   // request (content.ts), which tells local servers to stop generating - PreYem
@@ -127,7 +133,7 @@ function buildBoldOpHandle(container: HTMLElement, text: string, author: string)
 }
 
 // Summary Modal - PreYem
-export function showModal(summary: SummarizeResponse, author: string, elapsedMs: number | null, mode: string | null) {
+export function showModal(summary: SummarizeResponse, author: string, elapsedMs: number | null, mode: string | null, uiLanguage = "en", commentCount = 0) {
   document.querySelector(".rs-modal-backgroundOverlay")?.remove();
 
   const overlay = document.createElement("div");
@@ -139,6 +145,7 @@ export function showModal(summary: SummarizeResponse, author: string, elapsedMs:
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-modal", "true");
   modal.setAttribute("aria-labelledby", "rs-modal-title");
+  modal.setAttribute("dir", isRtl(uiLanguage) ? "rtl" : "ltr");
 
   // --- Header ---
   const header = document.createElement("div");
@@ -157,7 +164,7 @@ export function showModal(summary: SummarizeResponse, author: string, elapsedMs:
   const closeBtn = document.createElement("button");
   closeBtn.className = "rs-modal-close";
   closeBtn.textContent = "\u2715";
-  closeBtn.setAttribute("aria-label", "Close AI summary modal");
+  closeBtn.setAttribute("aria-label", uiText(uiLanguage, "modal_close_aria"));
   closeBtn.addEventListener("click", closeModal);
 
   header.appendChild(title);
@@ -173,7 +180,7 @@ export function showModal(summary: SummarizeResponse, author: string, elapsedMs:
 
   const postLabel = document.createElement("div");
   postLabel.className = "rs-section-label";
-  postLabel.textContent = "Post";
+  postLabel.textContent = uiText(uiLanguage, "sec_post");
 
   const postText = document.createElement("p");
   postText.className = "rs-section-text";
@@ -188,7 +195,7 @@ export function showModal(summary: SummarizeResponse, author: string, elapsedMs:
 
   const communityLabel = document.createElement("div");
   communityLabel.className = "rs-section-label";
-  communityLabel.textContent = "Community";
+  communityLabel.textContent = uiText(uiLanguage, "sec_community");
 
   const communityText = document.createElement("p");
   communityText.className = "rs-section-text";
@@ -203,26 +210,28 @@ export function showModal(summary: SummarizeResponse, author: string, elapsedMs:
 
   const communityReactionLabel = document.createElement("div");
   communityReactionLabel.className = "rs-section-label";
-  communityReactionLabel.textContent = "Community Reaction";
+  communityReactionLabel.textContent = uiText(uiLanguage, "sec_reaction");
 
   const communityReactionText = document.createElement("p");
   communityReactionText.className = "rs-section-text";
-  communityReactionText.textContent = summary.communityReaction;
+  communityReactionText.textContent = reactionLabel(uiLanguage, summary.communityReaction);
 
   communityReactionSection.appendChild(communityReactionLabel);
   communityReactionSection.appendChild(communityReactionText);
 
   body.appendChild(postSection);
   body.appendChild(communitySection);
-  body.appendChild(createReactionSection(summary));
+  body.appendChild(createReactionSection(summary, uiLanguage, commentCount));
 
   // --- Footer ---
   const footer = document.createElement("div");
   footer.className = "rs-modal-footer";
+  footer.setAttribute("dir", "ltr");
 
   // Safe: this markup is entirely static — no dynamic values are interpolated into it.
+  // #26: the footer is frozen English on every language — only the modal body translates - PreYem
   footer.innerHTML = `
-    <span class="rs-modal-footer-text">Built by PreYem · <span class="rs-modal-footer-model"></span></span>
+    <span class="rs-modal-footer-text">${uiText("en", "ft_built_by")}<span class="rs-modal-footer-model"></span></span>
     <div class="rs-modal-footer-links">
       <a href="https://preyem.me/" target="_blank" rel="noopener" title="Portfolio" aria-label="Portfolio">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-icon lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -254,17 +263,21 @@ export function showModal(summary: SummarizeResponse, author: string, elapsedMs:
   };
 
   if (elapsedMs === null || mode === null) {
-    addPart(null, "Generated by ");
+    addPart(null, uiText("en", "ft_generated_by"));
     addPart("rs-ft-model", summary.aiModel);
     addPart(null, ".");
   } else {
-    addPart(null, "Summarized by ");
+    addPart(null, uiText("en", "ft_summarize_by"));
     addPart(
       "rs-ft-label",
-      mode === "local" ? "Your Local Model" : mode === "api" ? "Your AI Cloud Provider" : "Reddit Summarizer's backend",
+      mode === "local"
+        ? uiText("en", "ft_label_local")
+        : mode === "api"
+          ? uiText("en", "ft_label_api")
+          : uiText("en", "ft_label_cloud"),
     );
-    addPart(null, " in ");
-    addPart("rs-ft-time", formatElapsed(elapsedMs));
+    addPart(null, uiText("en", "ft_in"));
+    addPart("rs-ft-time", formatElapsed(elapsedMs, "en"));
     addPart(null, " | ");
     addPart("rs-ft-model", summary.aiModel);
     addPart(null, ".");
@@ -294,7 +307,7 @@ export function showModal(summary: SummarizeResponse, author: string, elapsedMs:
 // #21 error modal: same shell as the summary modal (same overlay + entrance animation,
 // same ✕/overlay-click/ESC closes), only the content differs. Errors are never cached —
 // closing it leaves the button idle and clickable for a fresh attempt - PreYem
-export function showErrorModal(provider: string, model: string, kind: string, message: string): void {
+export function showErrorModal(provider: string, model: string, kind: string, message: string, uiLanguage = "en"): void {
   document.querySelector(".rs-modal-backgroundOverlay")?.remove();
 
   const overlay = document.createElement("div");
@@ -306,6 +319,7 @@ export function showErrorModal(provider: string, model: string, kind: string, me
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-modal", "true");
   modal.setAttribute("aria-labelledby", "rs-modal-title");
+  modal.setAttribute("dir", isRtl(uiLanguage) ? "rtl" : "ltr");
 
   const header = document.createElement("div");
   header.className = "rs-modal-header";
@@ -313,12 +327,12 @@ export function showErrorModal(provider: string, model: string, kind: string, me
   const title = document.createElement("span");
   title.className = "rs-modal-title";
   title.id = "rs-modal-title";
-  title.textContent = "AI Summary - Error";
+  title.textContent = uiText(uiLanguage, "err_title");
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "rs-modal-close";
   closeBtn.textContent = "\u2715";
-  closeBtn.setAttribute("aria-label", "Close AI summary error modal");
+  closeBtn.setAttribute("aria-label", uiText(uiLanguage, "modal_error_aria"));
   closeBtn.addEventListener("click", closeModal);
 
   header.appendChild(title);
@@ -344,10 +358,10 @@ export function showErrorModal(provider: string, model: string, kind: string, me
     body.appendChild(section);
   };
 
-  addSection("Provider", provider);
-  addSection("Model", model);
-  addSection("Error type", kind);
-  addSection("Message", message);
+  addSection(uiText(uiLanguage, "err_provider"), provider);
+  addSection(uiText(uiLanguage, "err_model"), model);
+  addSection(uiText(uiLanguage, "err_type"), kind);
+  addSection(uiText(uiLanguage, "err_message"), message);
 
   modal.appendChild(header);
   modal.appendChild(body);

@@ -17,15 +17,15 @@
             </svg> -->
             <img src="icons/icon-512.png" />
           </span>
-          <h1 class="text-[15px] font-bold leading-none text-[#ff4500]">Reddit Summarizer</h1>
+          <h1 data-rs="st_title" class="text-[15px] font-bold leading-none text-[#ff4500]">Reddit Summarizer</h1>
         </div>
-        <span class="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/35">v1.7.0</span>
+        <span class="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/35">v1.8.0</span>
       </header>
 
       <p class="text-[12.5px] leading-relaxed text-[#9a9a9a]">
-        Open any Reddit text post and click
-        <strong class="font-semibold text-[#ff4500]">AI Summary</strong>
-        button to get a concise breakdown of the post along with the most relevant insights from the top comments.
+        <span data-rs="pp_intro_a">Open any Reddit text post and click</span>
+        <strong data-rs="btn_idle" class="font-semibold text-[#ff4500]">AI Summary</strong>
+        <span data-rs="pp_intro_b">button to get a concise breakdown of the post along with the most relevant insights from the top comments.</span>
       </p>
 
       <!-- Status + settings -->
@@ -35,7 +35,7 @@
             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#46d160] opacity-60 motion-reduce:animate-none"></span>
             <span class="relative inline-flex h-2 w-2 rounded-full bg-[#46d160]"></span>
           </span>
-          Active on Reddit
+          <span data-rs="pp_active">Active on Reddit</span>
         </div>
         <a
           href="settings.html"
@@ -62,29 +62,29 @@
             <line x1="1" y1="14" x2="7" y2="14" />
             <line x1="9" y1="8" x2="15" y2="8" />
             <line x1="17" y1="16" x2="23" y2="16" />
-          </svg>
-          Settings
+          </svg          >
+          <span data-rs="pp_settings">Settings</span>
         </a>
+
       </div>
 
       <!-- Declared limitations -->
       <section class="rounded-lg border border-[#ff4500]/20 bg-[#ff4500]/6 px-3 py-2.5">
-        <p class="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#ff4500]">⚠️ Known limitations</p>
+        <p data-rs="pp_limits" class="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#ff4500]">⚠️ Known limitations</p>
         <ul class="flex list-disc flex-col gap-1.5 pl-4 marker:text-[#ff4500]/60">
           <li class="text-[11.5px] leading-relaxed text-white/60">
-            <span class="font-semibold text-white/75">Backend availability:</span> The free-tier backend may occasionally experience high traffic or
-            temporary downtime. It also goes to sleep after 15–20 minutes of inactivity, so the first request may take 1–2 minutes to become
-            available. Try again if a request fails. Local and own-key modes are unaffected.
+            <span data-rs="pp_limit_backend">Backend availability: The free-tier backend may occasionally experience high traffic or temporary downtime. It also goes to sleep after 15-20 minutes of inactivity, so the first request may take 1-2 minutes to become available. Try again if a request fails. Local and own-key modes are unaffected.</span>
           </li>
           <li class="text-[11.5px] leading-relaxed text-white/60">
-            Media content (videos, images, GIFs) is excluded from summaries to keep responses fast and reduce token usage.
+            <span data-rs="pp_limit_media">Media content (videos, images, GIFs) is excluded from summaries to keep responses fast and reduce token usage.</span>
           </li>
           <li class="text-[11.5px] leading-relaxed text-white/60">
-            Still in development. Found a bug?
+            <span data-rs="pp_limit_dev">Still in development. Found a bug?</span>
             <a
               href="https://github.com/PreYem/reddit-summarizer-preyem/issues"
               target="_blank"
               rel="noopener"
+              data-rs="pp_report"
               class="text-[#ff4500] no-underline hover:underline"
               >Report it on GitHub.</a
             >
@@ -117,8 +117,8 @@
             </svg>
           </span>
           <span class="flex flex-col gap-0.5">
-            <span class="text-[12.5px] font-semibold text-[#d7dadc]">Found this extension helpful?</span>
-            <span class="text-[10.5px] leading-snug text-white/45">
+            <span data-rs="pp_donate_q" class="text-[12.5px] font-semibold text-[#d7dadc]">Found this extension helpful?</span>
+            <span data-rs="pp_donate_note" class="text-[10.5px] leading-snug text-white/45">
               Optional contributions help support future updates and keep the extension free.
             </span>
           </span>
@@ -143,7 +143,7 @@
 
       <!-- Footer / socials -->
       <footer class="flex items-center justify-between">
-        <span class="text-[11px] text-white/30">Extension made by PreYem</span>
+        <span data-rs="st_attrib_full" class="text-[11px] text-white/30">Extension made by PreYem</span>
         <div class="flex items-center gap-3">
           <a
             href="https://preyem.me/"
@@ -199,5 +199,8 @@
         </div>
       </footer>
     </div>
+
+    <script src="languages.js"></script>
+    <script src="popup.js"></script>
   </body>
 </html>

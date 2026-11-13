@@ -11,6 +11,87 @@ const SETTINGS_KEY = "rs_settings";
 // so switching source on the page (or after saving) repopulates THAT source's fields - PreYem
 const SETTINGS_VERSION = 3;
 
+// #26: rs_ui v2 — ONE preferredLanguage replaces the #25 uiLanguage/summaryLanguage pair.
+// Unlike #25 it is NOT instant: changing it arms the Save button, and clicking Save persists
+// it together with rs_settings, so the connection gate can never silently drop a language - PreYem
+const SETTINGS_UI_STORAGE_KEY = "rs_ui";
+const SETTINGS_UI_VERSION = 2;
+
+// #26: the settings page stays frozen English forever — the data-rs keys remain as a map but
+// localizeUiPage is gone. Only the add-on UI on Reddit pages translates - PreYem
+const settingsUiLanguage = "en";
+
+let savedPreferredLanguage = "en";
+let languageDirty = false;
+
+function settingsBrowserLanguage() {
+  return matchLang((typeof navigator === "object" && navigator.language) || "");
+}
+
+function persistUiLanguage(callback?: () => void) {
+  const langSelect = selectById("rs-pref-lang");
+  const next = langSelect ? sanitizeLang(langSelect.value || "") : "";
+  if (next) savedPreferredLanguage = next;
+  languageDirty = false;
+  chrome.storage.local.set(
+    { [SETTINGS_UI_STORAGE_KEY]: { v: SETTINGS_UI_VERSION, preferredLanguage: savedPreferredLanguage } },
+    () => {
+      void chrome.runtime.lastError;
+      if (callback) callback();
+    },
+  );
+}
+
+function settingsSetSelectValue(select: HTMLSelectElement, value: string) {
+  let found = false;
+  for (let i = 0; i < select.options.length; i++) {
+    const option = select.options[i];
+    option.selected = option.value === value;
+    if (option.value === value) found = true;
+  }
+  if (!found && select.options.length) select.options[0].selected = true;
+}
+
+function settingsPopulateLanguageOptions(select: HTMLSelectElement, preferred: string | null) {
+  while (select.firstChild) select.removeChild(select.firstChild);
+  for (const language of LANGUAGES) {
+    const option = document.createElement("option") as HTMLOptionElement;
+    option.value = language.code;
+    option.textContent = language.name;
+    select.appendChild(option);
+  }
+  settingsSetSelectValue(select, sanitizeLang(preferred || "") || "en");
+}
+
+function initSettingsUiLanguages(callback: () => void) {
+  const langSelect = selectById("rs-pref-lang");
+  const browser = settingsBrowserLanguage();
+  chrome.storage.local.get(SETTINGS_UI_STORAGE_KEY, (stored) => {
+    const saved = stored[SETTINGS_UI_STORAGE_KEY];
+    const savedLanguage =
+      saved && saved.v === SETTINGS_UI_VERSION && typeof saved.preferredLanguage === "string"
+        ? saved.preferredLanguage
+        : "";
+    // First install (or v1 leftovers): browser-detected default, persisted once - PreYem
+    savedPreferredLanguage = sanitizeLang(savedLanguage || browser) || "en";
+    if (langSelect) settingsPopulateLanguageOptions(langSelect, savedPreferredLanguage);
+    persistUiLanguage(callback);
+  });
+}
+
+// #26: choosing a dropdown option never saves on its own — it flags the Save button so the
+// change goes through the same click as the connection settings - PreYem
+function onLanguageEdit() {
+  const langSelect = selectById("rs-pref-lang");
+  const next = langSelect ? sanitizeLang(langSelect.value || "") : "";
+  languageDirty = (next || "en") !== savedPreferredLanguage;
+  updateSaveState();
+}
+
+if (selectById("rs-pref-lang")) {
+  selectById("rs-pref-lang").addEventListener("change", onLanguageEdit);
+}
+
 // TS helpers for the page's controls. saveHint/resetButton stay nullable on purpose - the
 // code guards for their absence, so a missing element id can't crash the rest of the page.
 function selectById(id: string) {
@@ -64,14 +145,14 @@ function setThinkOptions(preferred: string | null) {
   const options =
     flavorSelect.value === "ollama"
       ? [
-          ["none", "None - off (Recommended)"],
-          ["low", "On - thinking enabled"],
+          ["none", uiText(settingsUiLanguage, "think_none")],
+          ["low", uiText(settingsUiLanguage, "think_on")],
         ]
       : [
-          ["none", "None - off (Recommended)"],
-          ["low", "Low"],
-          ["medium", "Medium"],
-          ["high", "High"],
+          ["none", uiText(settingsUiLanguage, "think_none")],
+          ["low", uiText(settingsUiLanguage, "think_low")],
+          ["medium", uiText(settingsUiLanguage, "think_medium")],
+          ["high", uiText(settingsUiLanguage, "think_high")],
         ];
   for (const entry of options) {
     const option = document.createElement("option") as HTMLOptionElement;
@@ -103,7 +184,7 @@ function isValidEndpoint(value: string | null) {
 }
 
 function modeLabel(mode: string) {
-  return mode === "api" ? "AI Cloud Provider" : mode === "local" ? "Local" : "Cloud";
+  return uiText(settingsUiLanguage, mode === "api" ? "mode_api" : mode === "local" ? "mode_local" : "mode_cloud");
 }
 
 // Show only the inputs the chosen source actually uses (#18 feedback)
@@ -173,12 +254,14 @@ function updateSaveState() {
   const cfg = formConfig();
   const tested = cfg.mode === "cloud" || verifiedKey === connectionKey(cfg);
   const notAlreadySaved = fullSignature(cfg) !== savedSignature;
-  const allowed = tested && notAlreadySaved;
+  // #26: a language change arms Save on its own, even while the Test gate blocks the
+  // connection fields - PreYem
+  const allowed = (tested && notAlreadySaved) || languageDirty;
 
   saveButton.disabled = !allowed;
-  saveButton.title = tested
-    ? (allowed ? "" : "Saved — edit a field (or model) then Test to save again")
-    : "Run Test connection successfully first";
+  saveButton.title = tested || languageDirty
+    ? (allowed ? "" : uiText(settingsUiLanguage, "st_tool_saved"))
+    : uiText(settingsUiLanguage, "st_tool_testfirst");
 
   // The hint element is optional in the settings HTML.
   if (saveHint) {
@@ -191,7 +274,7 @@ function onConnectionEdit() {
   const wasEnabled = !saveButton.disabled;
   updateSaveState();
   if (wasEnabled && saveButton.disabled) {
-    setStatus("info", "Connection settings changed - Test the  connection to enable Save.");
+    setStatus("info", uiText(settingsUiLanguage, "st_info_connchanged"));
   }
 }
 
@@ -309,7 +392,10 @@ function requestEndpointAccess(endpoint: string | null, callback: (granted: bool
   }
   chrome.permissions.request({ origins: [pattern] }, (granted) => {
     if (chrome.runtime.lastError || !granted) {
-      setStatus("error", "Access to " + pattern + " was not granted, so Chromium can't reach this server.");
+      setStatus(
+        "error",
+        uiText(settingsUiLanguage, "st_err_access_a") + pattern + uiText(settingsUiLanguage, "st_err_access_b"),
+      );
       callback(false);
       return;
     }
@@ -335,8 +421,16 @@ function persist(settings: any) {
   chrome.storage.local.set({ [SETTINGS_KEY]: { v: SETTINGS_VERSION, activeKey: key, slots } }, () => {
     savedSlots = slots;
     savedSignature = fullSignature(formConfig());
+    // #26: one Save click commits both rs_settings and a pending rs_ui language - PreYem
+    if (languageDirty) {
+      persistUiLanguage(() => {
+        updateSaveState();
+        setStatus("ok", uiText(settingsUiLanguage, "st_ok_saved"));
+      });
+      return;
+    }
     updateSaveState(); // #24: the Save just consumed itself → button greys out until a change
-    setStatus("ok", "Saved. These persist across sessions and browser restarts.");
+    setStatus("ok", uiText(settingsUiLanguage, "st_ok_saved"));
   });
 }
 
@@ -393,42 +487,44 @@ keyEyeButton.addEventListener("click", () => {
   keyEyeSlash.style.display = revealed ? "none" : "inline-block";
 });
 
+function initSettings() {
+  chrome.storage.local.get(SETTINGS_KEY, (data) => {
+    const saved = data[SETTINGS_KEY];
+    if (!saved || saved.v !== SETTINGS_VERSION) {
+      setStatus("info", uiText(settingsUiLanguage, "st_status_none_saved"));
+      showSections();
+      updateSaveState();
+      return;
+    }
+    savedSlots = saved.slots || {};
+    const activeKey = saved.activeKey || "cloud";
+    const parts = activeKey.split(":");
+    if (parts[0] === "api") {
+      modeSelect.value = "api";
+      providerSelect.value = parts[1] || "openai";
+    } else if (parts[0] === "local") {
+      modeSelect.value = "local";
+      flavorSelect.value = parts[1] || "openai";
+    } else {
+      modeSelect.value = "cloud";
+    }
+    applySlot();
+    showSections();
+    updateSaveState(); // loaded values count as untested, so API/Local start with Save locked
+    setStatus("ok", uiText(settingsUiLanguage, "st_ok_loaded") + modeLabel(modeSelect.value) + ".");
+
+    // Refresh the model dropdown straight from the server when possible
+    if (modeSelect.value !== "cloud" && isValidEndpoint(endpointInput.value)) {
+      fetchModelIds(formConfig(), (ids) => {
+        if (ids.length) setModelOptions(ids, savedSlots[activeKey] && savedSlots[activeKey].model);
+      });
+    }
+  });
+}
+
 showSections();
 updateSaveState();
-
-// Reflect saved settings in the form on page load (the browser can reopen this page anytime)
-chrome.storage.local.get(SETTINGS_KEY, (data) => {
-  const saved = data[SETTINGS_KEY];
-  if (!saved || saved.v !== SETTINGS_VERSION) {
-    setStatus("info", "No settings saved yet - cloud mode in use.");
-    showSections();
-    updateSaveState();
-    return;
-  }
-  savedSlots = saved.slots || {};
-  const activeKey = saved.activeKey || "cloud";
-  const parts = activeKey.split(":");
-  if (parts[0] === "api") {
-    modeSelect.value = "api";
-    providerSelect.value = parts[1] || "openai";
-  } else if (parts[0] === "local") {
-    modeSelect.value = "local";
-    flavorSelect.value = parts[1] || "openai";
-  } else {
-    modeSelect.value = "cloud";
-  }
-  applySlot();
-  showSections();
-  updateSaveState(); // loaded values count as untested, so API/Local start with Save locked
-  setStatus("ok", "Saved settings loaded - mode: " + modeLabel(modeSelect.value) + ".");
-
-  // Refresh the model dropdown straight from the server when possible
-  if (modeSelect.value !== "cloud" && isValidEndpoint(endpointInput.value)) {
-    fetchModelIds(formConfig(), (ids) => {
-      if (ids.length) setModelOptions(ids, savedSlots[activeKey] && savedSlots[activeKey].model);
-    });
-  }
-});
+initSettingsUiLanguages(initSettings);
 
 saveButton.addEventListener("click", () => {
   const mode = modeSelect.value;
@@ -436,18 +532,32 @@ saveButton.addEventListener("click", () => {
   const apiKey = apiKeyInput.value.trim();
   const model = modelSelect.value;
 
+  // #26: a language-only change commits rs_ui alone — the Test gate must never block it - PreYem
+  const cfgNow = formConfig();
+  const connTested = mode === "cloud" || verifiedKey === connectionKey(cfgNow);
+  const connChanged = fullSignature(cfgNow) !== savedSignature;
+  if (languageDirty && (!connTested || !connChanged)) {
+    // #27: also run updateSaveState here — without it the Save button stayed lit after a
+    // language-only commit, so the click looked like a no-op and users pressed it again - PreYem
+    persistUiLanguage(() => {
+      updateSaveState();
+      setStatus("ok", uiText(settingsUiLanguage, "st_ok_saved"));
+    });
+    return;
+  }
+
   if (mode === "api") {
     const provider = providerSelect.value;
     if (provider === "other" && !isValidEndpoint(endpoint)) {
-      setStatus("error", "An OpenAI-compatible 'other' provider needs a valid http(s) endpoint URL first.");
+      setStatus("error", uiText(settingsUiLanguage, "st_err_other_endpoint"));
       return;
     }
     if (!apiKey) {
-      setStatus("error", "AI Cloud Provider mode needs the provider's API key before saving.");
+      setStatus("error", uiText(settingsUiLanguage, "st_err_needkey"));
       return;
     }
     if (!model) {
-      setStatus("error", "Pick a model from the dropdown - run Test connection to load the list first.");
+      setStatus("error", uiText(settingsUiLanguage, "st_err_pickmodel"));
       return;
     }
     const settings: any = { v: SETTINGS_VERSION, mode, provider, apiKey, model };
@@ -460,11 +570,11 @@ saveButton.addEventListener("click", () => {
 
   if (mode === "local") {
     if (!isValidEndpoint(endpoint)) {
-      setStatus("error", "Local mode needs a valid http(s) endpoint URL before saving.");
+      setStatus("error", uiText(settingsUiLanguage, "st_err_local_endpoint"));
       return;
     }
     if (!model) {
-      setStatus("error", "Pick a model from the dropdown - run Test connection to load the list first.");
+      setStatus("error", uiText(settingsUiLanguage, "st_err_pickmodel"));
       return;
     }
     const settings: any = { v: SETTINGS_VERSION, mode, flavor: flavorSelect.value, endpoint, model };
@@ -497,19 +607,19 @@ if (resetButton)
     chrome.storage.local.set({ [SETTINGS_KEY]: { v: SETTINGS_VERSION, activeKey: key, slots } }, () => {
       savedSlots = slots;
       savedSignature = null; // #24: nothing saved for this source now, so Save can arm again
-      setStatus("info", "All fields reset to their defaults - nothing is saved for this source.");
+      setStatus("info", uiText(settingsUiLanguage, "st_info_reset"));
     });
   });
 
 const runTestConnection = () => {
   const cfg = formConfig();
   if (cfg.mode === "cloud") {
-    setStatus("info", "Cloud mode uses the built-in backend - nothing to test here.");
+    setStatus("info", uiText(settingsUiLanguage, "st_cloud_testing"));
     return;
   }
   const needsEndpoint = cfg.mode === "local" || cfg.provider === "other";
   if (needsEndpoint && !isValidEndpoint(cfg.endpoint)) {
-    setStatus("error", "Type a valid http(s) endpoint URL first.");
+    setStatus("error", uiText(settingsUiLanguage, "st_err_needendpoint"));
     return;
   }
 
@@ -519,7 +629,7 @@ const runTestConnection = () => {
     // when an earlier Test had passed for these same fields - PreYem
     verifiedKey = null;
     updateSaveState();
-    setStatus("warn", "Testing connection…");
+    setStatus("warn", uiText(settingsUiLanguage, "st_testing"));
 
     fetch(modelListUrl(cfg), { headers: modelHeaders(cfg) })
       .then((response) => {
@@ -533,25 +643,27 @@ const runTestConnection = () => {
                 // anything while the request ran, the keys differ and Save stays locked
                 verifiedKey = connectionKey(cfg);
                 updateSaveState();
-                setStatus("ok", "Connected - " + ids.length + (ids.length === 1 ? " model" : " models") + " found. Pick one, then Save.");
+                setStatus(
+                  "ok",
+                  uiText(settingsUiLanguage, "st_conn_a") + ids.length +
+                    (ids.length === 1 ? uiText(settingsUiLanguage, "st_model_one") : uiText(settingsUiLanguage, "st_model_many")) +
+                    uiText(settingsUiLanguage, "st_conn_b"),
+                );
               } else {
-                setStatus("warn", "Server answered but no models were listed - check the flavor/provider.");
+                setStatus("warn", uiText(settingsUiLanguage, "st_warn_nolist"));
               }
             },
-            () => setStatus("warn", "Reached the server, but the model list isn't JSON - check the flavor/provider."),
+            () => setStatus("warn", uiText(settingsUiLanguage, "st_warn_notjson")),
           );
         } else if (response.status === 403) {
-          setStatus(
-            "error",
-            "HTTP 403: the server refused the request. For Ollama, set OLLAMA_ORIGINS=chrome-extension://*,moz-extension://* and restart it.",
-          );
+          setStatus("error", uiText(settingsUiLanguage, "st_403"));
         } else if (response.status === 404) {
-          setStatus("warn", "HTTP 404: the server is reachable but that route doesn't exist. Check the flavor/provider and endpoint URL.");
+          setStatus("warn", uiText(settingsUiLanguage, "st_404"));
         } else {
-          setStatus("warn", "Reached the server but got HTTP " + response.status + " " + (response.statusText || ""));
+          setStatus("warn", uiText(settingsUiLanguage, "st_reached") + response.status + " " + (response.statusText || ""));
         }
       })
-      .catch(() => setStatus("error", "Not reachable: is the server running, and is the URL correct?"));
+      .catch(() => setStatus("error", uiText(settingsUiLanguage, "st_unreach")));
   });
 };
 
@@ -562,6 +674,6 @@ testButton.addEventListener("click", () => {
     runTestConnection();
   } catch (error) {
     const hiccup = error as Error;
-    setStatus("error", "Test connection hiccup: " + (hiccup.message || String(error)));
+    setStatus("error", uiText(settingsUiLanguage, "st_hiccup") + (hiccup.message || String(error)));
   }
 });

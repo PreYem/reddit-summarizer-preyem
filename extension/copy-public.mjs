@@ -8,9 +8,15 @@ for (const file of ["popup.html", "settings.html", "styles.css", "popup.css"]) {
   copyFileSync("public/" + file, dist + "/" + file);
 }
 
+// #25: languages are transpiled from shared/languages.ts and exported like a classic page
+// script: top-level LANGUAGES/uiText/etc become globals available to settings.js/popup.js.
+const languagesTs = readFileSync("../shared/languages.ts", "utf8");
+const languagesJs = transpile(languagesTs, { target: ScriptTarget.ES2020 }).replace(/^export /gm, "");
+writeFileSync(dist + "/languages.js", languagesJs);
+
 // #24: the settings page + background page sources are authored in TS now; this transpiles
 // them straight to plain JS next to the other public assets (no bundling, comments kept) - PreYem
-for (const name of ["background", "settings"]) {
+for (const name of ["background", "settings", "popup"]) {
   const js = transpile(readFileSync("public/" + name + ".ts", "utf8"), { target: ScriptTarget.ES2020 });
   writeFileSync(dist + "/" + name + ".js", js);
 }
